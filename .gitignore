@@ -1,0 +1,22 @@
+# Environment variables with credentials
+.env
+
+# Saved auth contexts (contains session cookies)
+.auth/
+
+# Test artifacts
+*.png
+*.jpg
+*.mp4
+*.webm
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Test reports
+test-results/
+playwright-report/

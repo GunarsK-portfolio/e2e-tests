@@ -1,0 +1,145 @@
+version: '3'
+
+tasks:
+  # Top-level test execution tasks
+  test:all:
+    desc: Run all E2E tests
+    cmds:
+      - python run_all_tests.py --no-confirm
+
+  test:profile:
+    desc: Run Profile management tests
+    cmds:
+      - python e2e/profile/test_profile.py
+
+  test:skills:
+    desc: Run Skills CRUD tests
+    cmds:
+      - python e2e/skills/test_skills_crud.py
+
+  test:experience:
+    desc: Run Work Experience CRUD tests
+    cmds:
+      - python e2e/experience/test_experience_crud.py
+
+  test:certifications:
+    desc: Run Certifications/Education CRUD tests
+    cmds:
+      - python e2e/certifications/test_certifications_crud.py
+
+  test:miniatures:
+    desc: Run Miniatures comprehensive tests
+    cmds:
+      - python e2e/miniatures/test_miniatures_comprehensive.py
+
+  test:miniatures:simple:
+    desc: Run simple Miniatures tab navigation test
+    cmds:
+      - python e2e/miniatures/test_simple.py
+
+  # Test with options
+  test:all:headless:
+    desc: Run all tests in headless mode
+    cmds:
+      - TEST_HEADLESS=true python run_all_tests.py --no-confirm
+
+  test:all:interactive:
+    desc: Run all tests with confirmation prompt
+    cmds:
+      - python run_all_tests.py
+
+  # Setup and configuration
+  setup:
+    desc: Set up testing environment
+    cmds:
+      - pip install playwright
+      - playwright install chromium
+      - echo "Testing environment setup complete!"
+
+  setup:env:
+    desc: Create .env file from template
+    cmds:
+      - cmd: cp .env.example .env
+        platforms: [linux, darwin]
+      - cmd: copy .env.example .env
+        platforms: [windows]
+      - echo "Created .env file. Please edit it with your credentials."
+
+  # Cleanup tasks
+  clean:
+    desc: Clean test artifacts and screenshots
+    cmds:
+      - cmd: rm -rf /tmp/*.png e2e/auth/.auth/
+        platforms: [linux, darwin]
+        ignore_error: true
+      - cmd: if exist C:\tmp\*.png del C:\tmp\*.png
+        platforms: [windows]
+        ignore_error: true
+      - cmd: if exist e2e\auth\.auth rmdir /s /q e2e\auth\.auth
+        platforms: [windows]
+        ignore_error: true
+      - echo "Cleaned test artifacts"
+
+  clean:cache:
+    desc: Clean Python cache files
+    cmds:
+      - cmd: find . -type d -name __pycache__ -exec rm -rf {} +
+        platforms: [linux, darwin]
+        ignore_error: true
+      - cmd: find . -type f -name "*.pyc" -delete
+        platforms: [linux, darwin]
+        ignore_error: true
+      - cmd: for /d /r . %d in (__pycache__) do @if exist "%d" rmdir /s /q "%d"
+        platforms: [windows]
+        ignore_error: true
+      - cmd: del /s /q *.pyc
+        platforms: [windows]
+        ignore_error: true
+      - echo "Cleaned Python cache"
+
+  # Documentation and help
+  list:
+    desc: List all available tests
+    cmds:
+      - echo "Available test suites:"
+      - echo "  - Profile Management (test:profile)"
+      - echo "  - Skills CRUD (test:skills)"
+      - echo "  - Work Experience CRUD (test:experience)"
+      - echo "  - Certifications/Education CRUD (test:certifications)"
+      - echo "  - Miniatures Comprehensive (test:miniatures)"
+      - echo ""
+      - echo "Run 'task test:all' to execute all tests"
+
+  check:env:
+    desc: Check if .env file exists and is configured
+    cmds:
+      - cmd: |
+          if [ ! -f .env ]; then
+            echo "ERROR: .env file not found. Run 'task setup:env' to create it."
+            exit 1
+          fi
+          if grep -q "your_username\|your_password" .env; then
+            echo "WARNING: .env file contains default values. Please update with actual credentials."
+          else
+            echo "✓ .env file is configured"
+          fi
+        platforms: [linux, darwin]
+      - cmd: |
+          if not exist .env (
+            echo ERROR: .env file not found. Run 'task setup:env' to create it.
+            exit /b 1
+          )
+          findstr /C:"your_username" /C:"your_password" .env >nul
+          if %errorlevel% equ 0 (
+            echo WARNING: .env file contains default values. Please update with actual credentials.
+          ) else (
+            echo ✓ .env file is configured
+          )
+        platforms: [windows]
+
+  # CI/CD tasks
+  ci:all:
+    desc: Run all tests suitable for CI (headless, no confirmation)
+    cmds:
+      - task: check:env
+      - TEST_HEADLESS=true python run_all_tests.py --no-confirm
