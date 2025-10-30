@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":combinePatchMinorReleases",
+    ":label(testing)"
+  ],
+  "timezone": "Europe/Riga",
+  "schedule": ["every weekend"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["dependencies", "automerge"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "matchDepTypes": ["dependencies"],
+      "groupName": "all minor dependencies",
+      "labels": ["dependencies", "minor-update"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dependencies", "major-update"]
+    },
+    {
+      "matchPackageNames": ["playwright"],
+      "groupName": "playwright",
+      "dependencyDashboardApproval": true,
+      "labels": ["core", "manual-review"]
+    },
+    {
+      "matchPackageNames": ["black", "flake8", "isort", "pylint", "mypy"],
+      "groupName": "linting tools",
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["devDependencies", "automerge"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": true,
+      "labels": ["ci"]
+    }
+  ],
+  "rangeStrategy": "bump",
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "rebaseWhen": "behind-base-branch",
+  "pip_requirements": {
+    "fileMatch": ["(^|/)requirements\\.txt$"]
+  }
+}

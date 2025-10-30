@@ -5,14 +5,14 @@ Tests creating, viewing, editing, and deleting paints
 """
 
 import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from playwright.sync_api import sync_playwright
-from auth.login import login
-from common.helpers import take_screenshot, wait_for_page_load, check_element_exists
 
-BASE_URL = 'http://localhost:5173'
+from e2e.auth.login import login
+from e2e.common.helpers import take_screenshot, wait_for_page_load
+
+BASE_URL = "http://localhost:5173"
+
 
 def test_paints_crud():
     """Test Paints CRUD operations"""
@@ -29,21 +29,21 @@ def test_paints_crud():
                 browser.close()
                 return False
 
-            take_screenshot(page, '01_dashboard', 'Dashboard loaded')
+            take_screenshot(page, "01_dashboard", "Dashboard loaded")
 
             # Step 2: Navigate to Miniatures
             print("\n📍 Navigating to Miniatures page...")
-            page.goto(f'{BASE_URL}/miniatures')
+            page.goto(f"{BASE_URL}/miniatures")
             wait_for_page_load(page)
-            take_screenshot(page, '02_miniatures_page', 'Miniatures page')
+            take_screenshot(page, "02_miniatures_page", "Miniatures page")
 
             # Step 3: Switch to Paints tab
             print("\n🎨 Switching to Paints tab...")
-            paints_tab = page.locator('text=Paints').first
+            paints_tab = page.locator("text=Paints").first
             if paints_tab.count() > 0:
                 paints_tab.click()
                 page.wait_for_timeout(500)
-                take_screenshot(page, '03_paints_tab', 'Paints tab active')
+                take_screenshot(page, "03_paints_tab", "Paints tab active")
                 print("   ✅ Paints tab loaded")
             else:
                 print("   ❌ Paints tab not found")
@@ -59,7 +59,7 @@ def test_paints_crud():
 
                 # Check for color swatches
                 # Color swatches are rendered as divs with background-color style
-                take_screenshot(page, '04_paints_table_full', 'Full paints table')
+                take_screenshot(page, "04_paints_table_full", "Full paints table")
             else:
                 print("   ⚠️  Paints table not visible")
 
@@ -73,7 +73,7 @@ def test_paints_crud():
                 modal = page.locator('[role="dialog"], .n-modal')
                 if modal.count() > 0:
                     print("   ✅ Add Paint modal opened")
-                    take_screenshot(page, '05_add_paint_modal', 'Add Paint modal')
+                    take_screenshot(page, "05_add_paint_modal", "Add Paint modal")
 
                     # Fill out form
                     print("   📝 Filling paint form...")
@@ -81,47 +81,51 @@ def test_paints_crud():
                     # Name
                     name_input = page.locator('input[placeholder*="paint name" i]').first
                     if name_input.count() > 0:
-                        name_input.fill('Test Paint E2E')
+                        name_input.fill("Test Paint E2E")
                         print("      ✓ Name filled")
 
                     # Manufacturer
                     manufacturer_input = page.locator('input[placeholder*="manufacturer" i]').first
                     if manufacturer_input.count() > 0:
-                        manufacturer_input.fill('Test Manufacturer')
+                        manufacturer_input.fill("Test Manufacturer")
                         print("      ✓ Manufacturer filled")
 
                     # Paint Type - click dropdown
-                    type_select = page.locator('text=Select paint type').first
+                    type_select = page.locator("text=Select paint type").first
                     if type_select.count() > 0:
                         type_select.click()
                         page.wait_for_timeout(300)
 
                         # Select "Layer" option
-                        layer_option = page.locator('text=Layer').nth(1)  # nth(1) to skip the label
+                        layer_option = page.locator("text=Layer").nth(1)  # nth(1) to skip the label
                         if layer_option.count() > 0:
                             layer_option.click()
                             print("      ✓ Paint type selected (Layer)")
                         page.wait_for_timeout(200)
 
                     # Color hex
-                    color_input = page.locator('input[placeholder*="#" i], input[maxlength="7"]').first
+                    color_input = page.locator(
+                        'input[placeholder*="#" i], input[maxlength="7"]'
+                    ).first
                     if color_input.count() > 0:
-                        color_input.fill('#FF5733')
+                        color_input.fill("#FF5733")
                         print("      ✓ Color filled")
 
-                    take_screenshot(page, '06_paint_form_filled', 'Form filled')
+                    take_screenshot(page, "06_paint_form_filled", "Form filled")
 
                     # Save
-                    save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
+                    save_btn = page.locator(
+                        'button:has-text("Save"), button:has-text("Create")'
+                    ).first
                     if save_btn.count() > 0:
                         print("   💾 Saving paint...")
                         save_btn.click()
                         page.wait_for_timeout(1500)  # Wait for save and table refresh
-                        take_screenshot(page, '07_after_save', 'After saving paint')
+                        take_screenshot(page, "07_after_save", "After saving paint")
                         print("   ✅ Paint saved successfully")
 
                         # Verify paint appears in table
-                        test_paint = page.locator('text=Test Paint E2E')
+                        test_paint = page.locator("text=Test Paint E2E")
                         if test_paint.count() > 0:
                             print("   ✅ New paint appears in table")
                         else:
@@ -145,13 +149,13 @@ def test_paints_crud():
             print("\n🔍 Testing search functionality...")
             search_input = page.locator('input[placeholder*="search" i]').first
             if search_input.count() > 0:
-                search_input.fill('Test Paint')
+                search_input.fill("Test Paint")
                 page.wait_for_timeout(500)
-                take_screenshot(page, '08_search_filtered', 'Search results')
+                take_screenshot(page, "08_search_filtered", "Search results")
                 print("   ✅ Search executed")
 
                 # Clear search
-                search_input.fill('')
+                search_input.fill("")
                 page.wait_for_timeout(500)
             else:
                 print("   ⚠️  Search input not found")
@@ -163,14 +167,16 @@ def test_paints_crud():
 
         except Exception as e:
             print(f"\n❌ Error during testing: {e}")
-            take_screenshot(page, 'error', 'Error state')
+            take_screenshot(page, "error", "Error state")
             import traceback
+
             traceback.print_exc()
             return False
         finally:
             input("\nPress Enter to close browser...")
             browser.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     success = test_paints_crud()
     sys.exit(0 if success else 1)

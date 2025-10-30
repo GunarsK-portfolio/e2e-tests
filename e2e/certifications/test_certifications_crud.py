@@ -5,15 +5,14 @@ Tests: Create, Read, Update, Delete for certifications
 """
 
 import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from playwright.sync_api import sync_playwright
-from auth.auth_manager import AuthManager
-from common.config import get_config
+
+from e2e.auth.auth_manager import AuthManager
+from e2e.common.config import get_config
 
 config = get_config()
-BASE_URL = config['admin_web_url']
+BASE_URL = config["admin_web_url"]
 
 
 def test_certifications_crud():
@@ -21,7 +20,7 @@ def test_certifications_crud():
     with sync_playwright() as p:
         auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
-        page, context = auth_manager.authenticate(browser, strategy='auto')
+        page, context = auth_manager.authenticate(browser, strategy="auto")
 
         if not page:
             print("[ERROR] Authentication failed")
@@ -32,14 +31,16 @@ def test_certifications_crud():
         try:
             # Navigate to Certifications page
             print("1. Navigating to Certifications page...")
-            page.goto(f'{BASE_URL}/certifications')
-            page.wait_for_load_state('networkidle')
-            page.screenshot(path='/tmp/certifications_01_page.png')
+            page.goto(f"{BASE_URL}/certifications")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="/tmp/certifications_01_page.png")
             print("   [OK] Certifications page loaded")
 
             # Check for Add button
             print("\n2. Checking Add Certification button...")
-            add_btn = page.locator('button:has-text("Add Certification"), button:has-text("Add Education")')
+            add_btn = page.locator(
+                'button:has-text("Add Certification"), button:has-text("Add Education")'
+            )
             if add_btn.count() > 0:
                 print("   [OK] Add button found")
             else:
@@ -62,23 +63,26 @@ def test_certifications_crud():
                 modal = page.locator('[role="dialog"]')
                 if modal.count() > 0:
                     print("   [OK] Modal opened")
-                    page.screenshot(path='/tmp/certifications_02_add_modal.png')
+                    page.screenshot(path="/tmp/certifications_02_add_modal.png")
 
                     # Check form fields based on Certifications.vue
                     fields = {
-                        'name': page.locator('input[placeholder*="certification name" i]').first,
-                        'issuer': page.locator('input[placeholder*="issuing organization" i]').first,
-                        'issue_date': page.locator('text=Issue Date').first,
-                        'expiry_date': page.locator('text=Expiry Date').first,
-                        'credential_id': page.locator('input[placeholder*="credential" i]').first,
-                        'credential_url': page.locator('input[placeholder*="https" i]').first,
+                        "name": page.locator('input[placeholder*="certification name" i]').first,
+                        "issuer": page.locator(
+                            'input[placeholder*="issuing organization" i]'
+                        ).first,
+                        "issue_date": page.locator("text=Issue Date").first,
+                        "expiry_date": page.locator("text=Expiry Date").first,
+                        "credential_id": page.locator('input[placeholder*="credential" i]').first,
+                        "credential_url": page.locator('input[placeholder*="https" i]').first,
                     }
 
                     for field_name, field_locator in fields.items():
+                        formatted_name = field_name.replace("_", " ").capitalize()
                         if field_locator.count() > 0:
-                            print(f"   [OK] {field_name.replace('_', ' ').capitalize()} field found")
+                            print(f"   [OK] {formatted_name} field found")
                         else:
-                            print(f"   [INFO] {field_name.replace('_', ' ').capitalize()} field not found (may be optional)")
+                            print(f"   [INFO] {formatted_name} field not found (may be optional)")
 
                     # Close modal
                     cancel_btn = page.locator('button:has-text("Cancel")').first
@@ -98,8 +102,9 @@ def test_certifications_crud():
 
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path='/tmp/certifications_error.png')
+            page.screenshot(path="/tmp/certifications_error.png")
             import traceback
+
             traceback.print_exc()
             return False
         finally:
@@ -107,6 +112,6 @@ def test_certifications_crud():
             browser.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = test_certifications_crud()
     sys.exit(0 if success else 1)

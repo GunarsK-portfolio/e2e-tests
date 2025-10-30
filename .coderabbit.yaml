@@ -1,0 +1,20 @@
+language: en-US
+early_access: false
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+  docstring:
+    enabled: false
+  tools:
+    ruff:
+      enabled: true
+chat:
+  auto_reply: true
+tone_instructions: "Focus on Python best practices, Playwright E2E patterns, test reliability, code quality (linting), security in test data, and maintainability. Flag flaky tests, race conditions, and improper waits."
