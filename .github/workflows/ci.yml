@@ -174,7 +174,7 @@ jobs:
           # Check if README has essential sections
           grep -q "Quick Start" README.md || { echo "Missing Quick Start"; exit 1; }
           grep -q "Prerequisites" README.md || { echo "Missing Prerequisites"; exit 1; }
-          grep -q "Running Tests" README.md || { echo "Missing Running Tests"; exit 1; }
+          grep -q "Available Commands" README.md || { echo "Missing Available Commands"; exit 1; }
           grep -q "Test Coverage" README.md || { echo "Missing Test Coverage"; exit 1; }
           echo "Documentation is complete"
 
