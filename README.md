@@ -174,6 +174,6 @@ test:new-feature:
 ## Notes
 
 - Tests run with browser visible by default
-- Screenshots saved to `/tmp/` (or `C:\tmp\` on Windows)
+- Screenshots saved to system temp directory (configurable via TEST_SCREENSHOT_DIR)
 - All tests are independent and can run in any order
 - Test data is not cleaned up automatically

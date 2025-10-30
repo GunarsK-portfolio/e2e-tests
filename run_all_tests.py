@@ -7,7 +7,8 @@ Runs all E2E tests for the portfolio admin web application
 import os
 import subprocess
 import sys
-from datetime import datetime
+import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -65,8 +66,9 @@ class TestRunner:
             )
             return False
 
-        except Exception as e:
+        except (OSError, PermissionError) as e:
             print(f"\n[ERROR] Failed to run test: {e}")
+            print(f"Traceback:\n{traceback.format_exc()}")
             self.results.append(
                 {
                     "name": test_name,
@@ -80,7 +82,7 @@ class TestRunner:
 
     def run_all_tests(self):
         """Run all available E2E tests"""
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(timezone.utc)
 
         tests = [
             (self.testing_dir / "e2e" / "profile" / "test_profile.py", "Profile Management"),
@@ -119,7 +121,7 @@ class TestRunner:
                     }
                 )
 
-        self.end_time = datetime.now()
+        self.end_time = datetime.now(timezone.utc)
         return self.print_summary()
 
     def print_summary(self):

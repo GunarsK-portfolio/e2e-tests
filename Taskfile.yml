@@ -58,8 +58,9 @@ tasks:
 
   setup:dev:
     desc: Install development dependencies (linting tools)
+    deps:
+      - setup
     cmds:
-      - python -m pip install -r requirements.txt
       - echo "Development tools installed!"
 
   setup:env:

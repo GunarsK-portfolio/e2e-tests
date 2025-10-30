@@ -4,6 +4,7 @@ Loads settings from .env file and environment variables
 """
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -79,7 +80,9 @@ class TestConfig:
             ),
             # Test behavior
             "headless": self._parse_bool(self._get_value("TEST_HEADLESS", "false", env_vars)),
-            "screenshot_dir": self._get_value("TEST_SCREENSHOT_DIR", "/tmp", env_vars),
+            "screenshot_dir": self._get_value(
+                "TEST_SCREENSHOT_DIR", tempfile.gettempdir(), env_vars
+            ),
             "slow_mo": int(self._get_value("TEST_SLOW_MO", "0", env_vars)),
             "timeout": int(self._get_value("TEST_TIMEOUT", "30000", env_vars)),
             # Browser options
