@@ -7,12 +7,9 @@ Supports multiple authentication strategies:
 3. Manual login prompt
 """
 
-import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-from common.config import get_config
+from e2e.common.config import get_config
 
 
 class AuthManager:
@@ -20,11 +17,11 @@ class AuthManager:
 
     def __init__(self, base_url=None):
         self.config = get_config()
-        self.base_url = base_url or self.config['admin_web_url']
-        self.context_path = Path(__file__).parent / '.auth' / 'context.json'
+        self.base_url = base_url or self.config["admin_web_url"]
+        self.context_path = Path(__file__).parent / ".auth" / "context.json"
         self.credentials = {
-            'username': self.config['admin_username'],
-            'password': self.config['admin_password']
+            "username": self.config["admin_username"],
+            "password": self.config["admin_password"],
         }
 
     def ensure_auth_directory(self):
@@ -50,17 +47,21 @@ class AuthManager:
 
     def login_with_credentials(self, page, username=None, password=None):
         """Login using provided credentials or stored credentials"""
-        creds = {'username': username, 'password': password} if username and password else self.credentials
+        creds = (
+            {"username": username, "password": password}
+            if username and password
+            else self.credentials
+        )
 
-        if not creds['username'] or not creds['password']:
+        if not creds["username"] or not creds["password"]:
             print("   [FAIL] No credentials available")
             return False
 
         print(f"   [INFO] Attempting login with username: {creds['username']}")
 
         # Navigate to login page
-        page.goto(f'{self.base_url}/login')
-        page.wait_for_load_state('networkidle')
+        page.goto(f"{self.base_url}/login")
+        page.wait_for_load_state("networkidle")
 
         # Fill form - login uses username field
         username_input = page.locator('input[type="text"], input[placeholder*="username" i]').first
@@ -70,18 +71,20 @@ class AuthManager:
             print("   [FAIL] Login form not found")
             return False
 
-        username_input.fill(creds['username'])
-        password_input.fill(creds['password'])
+        username_input.fill(creds["username"])
+        password_input.fill(creds["password"])
 
         # Submit
-        login_btn = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign in")').first
+        login_btn = page.locator(
+            'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")'
+        ).first
         if login_btn.count() > 0:
             login_btn.click()
-            page.wait_for_load_state('networkidle')
+            page.wait_for_load_state("networkidle")
             page.wait_for_timeout(1000)  # Wait for redirect
 
             # Check success
-            if 'dashboard' in page.url or 'login' not in page.url:
+            if "dashboard" in page.url or "login" not in page.url:
                 print("   [OK] Login successful")
                 return True
             else:
@@ -103,15 +106,15 @@ class AuthManager:
         input("\nPress Enter after logging in...")
 
         # Verify login
-        page.wait_for_load_state('networkidle')
-        if 'login' not in page.url:
+        page.wait_for_load_state("networkidle")
+        if "login" not in page.url:
             print("   [OK] Manual login successful")
             return True
         else:
             print("   [FAIL] Still on login page")
             return False
 
-    def authenticate(self, browser, strategy='auto'):
+    def authenticate(self, browser, strategy="auto"):
         """
         Authenticate using specified strategy
 
@@ -125,14 +128,14 @@ class AuthManager:
         print(f"[AUTH] Base URL: {self.base_url}")
 
         # Try saved context first (if auto or context strategy)
-        if strategy in ['auto', 'context']:
+        if strategy in ["auto", "context"]:
             context = self.load_context(browser)
             if context:
                 page = context.new_page()
-                page.goto(f'{self.base_url}/dashboard')
-                page.wait_for_load_state('networkidle')
+                page.goto(f"{self.base_url}/dashboard")
+                page.wait_for_load_state("networkidle")
 
-                if 'login' not in page.url:
+                if "login" not in page.url:
                     print("   [OK] Authenticated using saved context")
                     return page, context
 
@@ -145,15 +148,15 @@ class AuthManager:
         page = context.new_page()
 
         # Try credentials (if auto or credentials strategy)
-        if strategy in ['auto', 'credentials'] and self.credentials['username']:
+        if strategy in ["auto", "credentials"] and self.credentials["username"]:
             if self.login_with_credentials(page):
                 self.save_context(context)
                 return page, context
 
         # Manual login (if auto or manual strategy, or if previous methods failed)
-        if strategy in ['auto', 'manual']:
-            page.goto(f'{self.base_url}/login')
-            page.wait_for_load_state('networkidle')
+        if strategy in ["auto", "manual"]:
+            page.goto(f"{self.base_url}/login")
+            page.wait_for_load_state("networkidle")
 
             if self.login_manual(page):
                 self.save_context(context)
@@ -165,7 +168,7 @@ class AuthManager:
         return None, None
 
 
-def authenticate_for_testing(browser, base_url=None, strategy='auto'):
+def authenticate_for_testing(browser, base_url=None, strategy="auto"):
     """
     Convenience function for test scripts
 

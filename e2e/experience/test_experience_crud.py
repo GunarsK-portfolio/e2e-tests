@@ -5,15 +5,14 @@ Tests: Create, Read, Update, Delete for work experience entries
 """
 
 import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from playwright.sync_api import sync_playwright
-from auth.auth_manager import AuthManager
-from common.config import get_config
+
+from e2e.auth.auth_manager import AuthManager
+from e2e.common.config import get_config
 
 config = get_config()
-BASE_URL = config['admin_web_url']
+BASE_URL = config["admin_web_url"]
 
 
 def test_experience_crud():
@@ -21,7 +20,7 @@ def test_experience_crud():
     with sync_playwright() as p:
         auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
-        page, context = auth_manager.authenticate(browser, strategy='auto')
+        page, context = auth_manager.authenticate(browser, strategy="auto")
 
         if not page:
             print("[ERROR] Authentication failed")
@@ -32,14 +31,16 @@ def test_experience_crud():
         try:
             # Navigate to Work Experience page
             print("1. Navigating to Work Experience page...")
-            page.goto(f'{BASE_URL}/work-experience')
-            page.wait_for_load_state('networkidle')
-            page.screenshot(path='/tmp/experience_01_page.png')
+            page.goto(f"{BASE_URL}/work-experience")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="/tmp/experience_01_page.png")
             print("   [OK] Work Experience page loaded")
 
             # Check for Add button
             print("\n2. Checking Add Experience button...")
-            add_btn = page.locator('button:has-text("Add Experience"), button:has-text("Add Work Experience")')
+            add_btn = page.locator(
+                'button:has-text("Add Experience"), button:has-text("Add Work Experience")'
+            )
             if add_btn.count() > 0:
                 print("   [OK] Add button found")
             else:
@@ -62,23 +63,26 @@ def test_experience_crud():
                 modal = page.locator('[role="dialog"]')
                 if modal.count() > 0:
                     print("   [OK] Modal opened")
-                    page.screenshot(path='/tmp/experience_02_add_modal.png')
+                    page.screenshot(path="/tmp/experience_02_add_modal.png")
 
                     # Check form fields based on WorkExperience.vue
                     fields = {
-                        'company': page.locator('input[placeholder*="company name" i]').first,
-                        'position': page.locator('input[placeholder*="job position" i]').first,
-                        'description': page.locator('textarea[placeholder*="responsibilities" i]').first,
-                        'start_date': page.locator('text=Start Date').first,
-                        'end_date': page.locator('text=End Date').first,
-                        'currently_working': page.locator('text=Currently working here').first,
+                        "company": page.locator('input[placeholder*="company name" i]').first,
+                        "position": page.locator('input[placeholder*="job position" i]').first,
+                        "description": page.locator(
+                            'textarea[placeholder*="responsibilities" i]'
+                        ).first,
+                        "start_date": page.locator("text=Start Date").first,
+                        "end_date": page.locator("text=End Date").first,
+                        "currently_working": page.locator("text=Currently working here").first,
                     }
 
                     for field_name, field_locator in fields.items():
+                        formatted_name = field_name.replace("_", " ").capitalize()
                         if field_locator.count() > 0:
-                            print(f"   [OK] {field_name.replace('_', ' ').capitalize()} field found")
+                            print(f"   [OK] {formatted_name} field found")
                         else:
-                            print(f"   [WARN] {field_name.replace('_', ' ').capitalize()} field not found")
+                            print(f"   [WARN] {formatted_name} field not found")
 
                     # Close modal
                     cancel_btn = page.locator('button:has-text("Cancel")').first
@@ -98,8 +102,9 @@ def test_experience_crud():
 
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path='/tmp/experience_error.png')
+            page.screenshot(path="/tmp/experience_error.png")
             import traceback
+
             traceback.print_exc()
             return False
         finally:
@@ -107,6 +112,6 @@ def test_experience_crud():
             browser.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = test_experience_crud()
     sys.exit(0 if success else 1)

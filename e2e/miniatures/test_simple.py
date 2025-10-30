@@ -5,15 +5,15 @@ Windows-compatible (no emojis)
 """
 
 import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from playwright.sync_api import sync_playwright
-from auth.auth_manager import AuthManager
-from common.config import get_config
+
+from e2e.auth.auth_manager import AuthManager
+from e2e.common.config import get_config
 
 config = get_config()
-BASE_URL = config['admin_web_url']
+BASE_URL = config["admin_web_url"]
+
 
 def test_miniatures():
     """Test Miniatures page and tabs"""
@@ -24,7 +24,7 @@ def test_miniatures():
         print("Authenticating...")
 
         browser = p.chromium.launch(headless=False)
-        page, context = auth_manager.authenticate(browser, strategy='auto')
+        page, context = auth_manager.authenticate(browser, strategy="auto")
 
         if not page:
             print("[ERROR] Authentication failed")
@@ -33,21 +33,21 @@ def test_miniatures():
         try:
             # Step 1: Go to dashboard
             print("\n1. Navigating to dashboard...")
-            page.goto(f'{BASE_URL}/dashboard')
-            page.wait_for_load_state('networkidle')
-            page.screenshot(path='/tmp/01_dashboard.png')
+            page.goto(f"{BASE_URL}/dashboard")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="/tmp/01_dashboard.png")
             print("   [OK] Dashboard loaded")
 
             # Step 2: Navigate to Miniatures
             print("\n2. Navigating to Miniatures...")
-            page.goto(f'{BASE_URL}/miniatures')
-            page.wait_for_load_state('networkidle')
-            page.screenshot(path='/tmp/02_miniatures.png')
+            page.goto(f"{BASE_URL}/miniatures")
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="/tmp/02_miniatures.png")
             print("   [OK] Miniatures page loaded")
 
             # Step 3: Check Projects tab
             print("\n3. Checking Projects tab...")
-            projects_tab = page.locator('text=Projects').first
+            projects_tab = page.locator("text=Projects").first
             if projects_tab.count() > 0:
                 print("   [OK] Projects tab found")
                 add_project = page.locator('button:has-text("Add Project")')
@@ -58,11 +58,11 @@ def test_miniatures():
 
             # Step 4: Switch to Themes
             print("\n4. Testing Themes tab...")
-            themes_tab = page.locator('text=Themes').first
+            themes_tab = page.locator("text=Themes").first
             if themes_tab.count() > 0:
                 themes_tab.click()
                 page.wait_for_timeout(500)
-                page.screenshot(path='/tmp/03_themes.png')
+                page.screenshot(path="/tmp/03_themes.png")
                 print("   [OK] Themes tab clicked")
 
                 add_theme = page.locator('button:has-text("Add Theme")')
@@ -73,11 +73,11 @@ def test_miniatures():
 
             # Step 5: Switch to Paints
             print("\n5. Testing Paints tab...")
-            paints_tab = page.locator('text=Paints').first
+            paints_tab = page.locator("text=Paints").first
             if paints_tab.count() > 0:
                 paints_tab.click()
                 page.wait_for_timeout(1000)  # Wait for data
-                page.screenshot(path='/tmp/04_paints.png')
+                page.screenshot(path="/tmp/04_paints.png")
                 print("   [OK] Paints tab clicked")
 
                 add_paint = page.locator('button:has-text("Add Paint")')
@@ -100,7 +100,7 @@ def test_miniatures():
                 modal = page.locator('[role="dialog"]')
                 if modal.count() > 0:
                     print("   [OK] Modal opened")
-                    page.screenshot(path='/tmp/05_modal.png')
+                    page.screenshot(path="/tmp/05_modal.png")
 
                     # Check fields
                     name_input = page.locator('input[placeholder*="paint name" i]').first
@@ -127,8 +127,9 @@ def test_miniatures():
 
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path='/tmp/error.png')
+            page.screenshot(path="/tmp/error.png")
             import traceback
+
             traceback.print_exc()
             return False
         finally:
@@ -137,6 +138,7 @@ def test_miniatures():
             context.close()
             browser.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     success = test_miniatures()
     sys.exit(0 if success else 1)
