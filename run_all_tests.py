@@ -4,6 +4,7 @@ Test Suite Runner
 Runs all E2E tests for the portfolio admin web application
 """
 
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -26,12 +27,17 @@ class TestRunner:
         print("=" * 70)
 
         try:
+            # Set PYTHONPATH to include the testing directory so imports work
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(self.testing_dir)
+
             result = subprocess.run(
                 [sys.executable, str(test_path)],
                 cwd=str(self.testing_dir),
                 capture_output=False,  # Show output in real-time
                 timeout=300,  # 5 minute timeout per test
                 check=False,  # Don't raise exception on non-zero exit
+                env=env,  # Pass modified environment
             )
 
             success = result.returncode == 0
@@ -114,7 +120,7 @@ class TestRunner:
                 )
 
         self.end_time = datetime.now()
-        self.print_summary()
+        return self.print_summary()
 
     def print_summary(self):
         """Print test execution summary"""

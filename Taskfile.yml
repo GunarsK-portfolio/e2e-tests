@@ -52,14 +52,14 @@ tasks:
   setup:
     desc: Set up testing environment
     cmds:
-      - pip install -r requirements.txt
-      - playwright install chromium
+      - python -m pip install -r requirements.txt
+      - python -m playwright install chromium
       - echo "Testing environment setup complete!"
 
   setup:dev:
     desc: Install development dependencies (linting tools)
     cmds:
-      - pip install -r requirements.txt
+      - python -m pip install -r requirements.txt
       - echo "Development tools installed!"
 
   setup:env:
