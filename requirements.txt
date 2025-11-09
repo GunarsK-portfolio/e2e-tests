@@ -9,4 +9,4 @@ pylint==3.3.9           # Static code analyzer
 mypy==1.18.2            # Type checker
 
 # Development dependencies
-python-dotenv==1.0.1    # .env file support (optional, we have custom loader)
+python-dotenv==1.2.1    # .env file support (optional, we have custom loader)
