@@ -4,9 +4,10 @@ Authentication Manager for E2E Tests
 Supports multiple authentication strategies:
 1. Credentials from .env via config module
 2. Saved browser context (cookies/session)
-3. Manual login prompt
+3. Manual login prompt (only in interactive mode)
 """
 
+import sys
 from pathlib import Path
 
 from e2e.common.config import get_config
@@ -95,7 +96,12 @@ class AuthManager:
             return False
 
     def login_manual(self, page):
-        """Prompt user to login manually"""
+        """Prompt user to login manually (only in interactive mode)"""
+        # Check if running in non-interactive mode (CI, piped input, etc.)
+        if not sys.stdin.isatty():
+            print("   [FAIL] Manual login not available in non-interactive mode")
+            return False
+
         print("\n" + "=" * 60)
         print("MANUAL LOGIN REQUIRED")
         print("=" * 60)
@@ -119,7 +125,7 @@ class AuthManager:
         Authenticate using specified strategy
 
         Strategies:
-        - 'auto': Try saved context, then credentials, then manual
+        - 'auto': Try credentials first (validation), fallback to saved context
         - 'context': Use saved context only
         - 'credentials': Use credentials only
         - 'manual': Manual login only
@@ -127,7 +133,27 @@ class AuthManager:
         print("\n[AUTH] Starting authentication...")
         print(f"[AUTH] Base URL: {self.base_url}")
 
-        # Try saved context first (if auto or context strategy)
+        # For 'auto' strategy: prefer credentials over saved context to ensure validation
+        # Only use saved context if credentials are not provided
+        if strategy == "auto" and self.credentials["username"]:
+            # Credentials are available, use them (don't trust saved context)
+            context = browser.new_context()
+            page = context.new_page()
+
+            if self.login_with_credentials(page):
+                self.save_context(context)
+                return page, context
+
+            # Credentials failed - fail immediately, don't try manual login
+            print("   [FAIL] Credentials invalid")
+            page.close()
+            context.close()
+            raise RuntimeError(
+                "Authentication failed: Invalid credentials in .env file. "
+                "Check TEST_ADMIN_USERNAME and TEST_ADMIN_PASSWORD."
+            )
+
+        # Try saved context (if context strategy, or if auto with no credentials)
         if strategy in ["auto", "context"]:
             context = self.load_context(browser)
             if context:
@@ -147,8 +173,8 @@ class AuthManager:
         context = browser.new_context()
         page = context.new_page()
 
-        # Try credentials (if auto or credentials strategy)
-        if strategy in ["auto", "credentials"] and self.credentials["username"]:
+        # Try credentials (if credentials strategy - auto already tried above)
+        if strategy == "credentials" and self.credentials["username"]:
             if self.login_with_credentials(page):
                 self.save_context(context)
                 return page, context
@@ -165,14 +191,18 @@ class AuthManager:
         print("   [FAIL] All authentication methods failed")
         page.close()
         context.close()
-        return None, None
+        raise RuntimeError(
+            "Authentication failed: All authentication methods exhausted. "
+            "Check credentials in .env or run tests interactively."
+        )
 
 
 def authenticate_for_testing(browser, base_url=None, strategy="auto"):
     """
     Convenience function for test scripts
 
-    Returns: (page, context) tuple or (None, None) if auth fails
+    Raises RuntimeError if authentication fails
+    Returns: (page, context) tuple
     """
     auth_manager = AuthManager(base_url)
     return auth_manager.authenticate(browser, strategy)
