@@ -8,27 +8,29 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
-from e2e.auth.login import login
+from e2e.auth.auth_manager import AuthManager
+from e2e.common.config import get_config
 from e2e.common.helpers import take_screenshot, wait_for_page_load
 
-BASE_URL = "http://localhost:5173"
+config = get_config()
+BASE_URL = config["admin_web_url"]
 
 
 def test_paints_crud():
     """Test Paints CRUD operations"""
     with sync_playwright() as p:
+        auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
+        page, context = auth_manager.authenticate(browser, strategy="auto")
+
+        if not page:
+            print("\n❌ Authentication failed - cannot proceed with tests")
+            browser.close()
+            return False
 
         print("🎨 Testing Miniature Paints CRUD...")
 
         try:
-            # Step 1: Login/Auth
-            if not login(page, base_url=BASE_URL):
-                print("\n❌ Authentication failed - cannot proceed with tests")
-                browser.close()
-                return False
-
             take_screenshot(page, "01_dashboard", "Dashboard loaded")
 
             # Step 2: Navigate to Miniatures
@@ -173,7 +175,9 @@ def test_paints_crud():
             traceback.print_exc()
             return False
         finally:
-            input("\nPress Enter to close browser...")
+            # Only prompt for input when running interactively (not in pytest)
+            if sys.stdin.isatty() and __name__ == "__main__":
+                input("\nPress Enter to close browser...")
             browser.close()
 
 

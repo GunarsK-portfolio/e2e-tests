@@ -8,27 +8,29 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
-from e2e.auth.login import login
+from e2e.auth.auth_manager import AuthManager
+from e2e.common.config import get_config
 from e2e.common.helpers import take_screenshot, wait_for_page_load
 
-BASE_URL = "http://localhost:5173"
+config = get_config()
+BASE_URL = config["admin_web_url"]
 
 
 def test_tabs_navigation():
     """Test navigation between Miniatures tabs"""
     with sync_playwright() as p:
+        auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
+        page, context = auth_manager.authenticate(browser, strategy="auto")
+
+        if not page:
+            print("\n❌ Authentication failed")
+            browser.close()
+            return False
 
         print("🗂️  Testing Miniatures Tabs Navigation...")
 
         try:
-            # Login
-            if not login(page, base_url=BASE_URL):
-                print("\n❌ Authentication failed")
-                browser.close()
-                return False
-
             # Navigate to Miniatures
             print("\n📍 Navigating to Miniatures...")
             page.goto(f"{BASE_URL}/miniatures")
@@ -97,7 +99,9 @@ def test_tabs_navigation():
             take_screenshot(page, "tabs_error", "Error state")
             return False
         finally:
-            input("\nPress Enter to close browser...")
+            # Only prompt for input when running interactively (not in pytest)
+            if sys.stdin.isatty() and __name__ == "__main__":
+                input("\nPress Enter to close browser...")
             browser.close()
 
 
