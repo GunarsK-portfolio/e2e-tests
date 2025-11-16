@@ -43,7 +43,9 @@ def test_auth_flow():
             # STEP 2: Test login validation - empty credentials
             # ========================================
             print("\n2. Testing login validation - empty credentials...")
-            login_btn = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign in")').first
+            login_btn = page.locator(
+                'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")'
+            ).first
             if login_btn.count() > 0:
                 login_btn.click()
                 page.wait_for_timeout(500)
@@ -58,7 +60,9 @@ def test_auth_flow():
             # STEP 3: Test login with invalid credentials
             # ========================================
             print("\n3. Testing login with invalid credentials...")
-            username_input = page.locator('input[type="text"], input[placeholder*="username" i]').first
+            username_input = page.locator(
+                'input[type="text"], input[placeholder*="username" i]'
+            ).first
             password_input = page.locator('input[type="password"]').first
 
             if username_input.count() > 0 and password_input.count() > 0:
@@ -111,7 +115,7 @@ def test_auth_flow():
                 "/skills",
                 "/work-experience",
                 "/certifications",
-                "/portfolio-projects"
+                "/portfolio-projects",
             ]
 
             for path in protected_pages:
@@ -168,7 +172,9 @@ def test_auth_flow():
             print("\n8. Testing logout functionality...")
 
             # Look for logout button - could be in various places
-            logout_btn = page.locator('button:has-text("Logout"), button:has-text("Log Out"), a:has-text("Logout"), a:has-text("Log Out")').first
+            logout_btn = page.locator(
+                'button:has-text("Logout"), button:has-text("Log Out"), a:has-text("Logout"), a:has-text("Log Out")'
+            ).first
 
             if logout_btn.count() > 0:
                 print("   [OK] Logout button found")
@@ -226,14 +232,18 @@ def test_auth_flow():
             page.goto(f"{BASE_URL}/login")
             page.wait_for_load_state("networkidle")
 
-            username_input = page.locator('input[type="text"], input[placeholder*="username" i]').first
+            username_input = page.locator(
+                'input[type="text"], input[placeholder*="username" i]'
+            ).first
             password_input = page.locator('input[type="password"]').first
 
             username_input.fill(USERNAME)
             password_input.fill(PASSWORD)
             page.wait_for_timeout(200)
 
-            login_btn = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign in")').first
+            login_btn = page.locator(
+                'button[type="submit"], button:has-text("Login"), button:has-text("Sign in")'
+            ).first
             login_btn.click()
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(1500)

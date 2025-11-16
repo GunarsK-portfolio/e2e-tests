@@ -107,7 +107,7 @@ def test_portfolio_projects_crud():
             page.wait_for_timeout(200)
 
             # Expand Links & Media section
-            links_section = page.locator('text=Links & Media').first
+            links_section = page.locator("text=Links & Media").first
             if links_section.count() > 0:
                 links_section.click()
                 page.wait_for_timeout(500)
@@ -167,11 +167,13 @@ def test_portfolio_projects_crud():
             page.wait_for_timeout(200)
 
             # Update category
-            category_select = page.locator('.n-select').first
+            category_select = page.locator(".n-select").first
             category_select.click()
             page.wait_for_timeout(300)
 
-            mobile_app_option = page.locator(f'div[role="option"]:has-text("{updated_category}")').first
+            mobile_app_option = page.locator(
+                f'div[role="option"]:has-text("{updated_category}")'
+            ).first
             if mobile_app_option.count() > 0:
                 mobile_app_option.click()
                 page.wait_for_timeout(300)

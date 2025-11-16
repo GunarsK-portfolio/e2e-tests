@@ -51,7 +51,7 @@ def test_dashboard_navigation():
                 print("   [WARN] Dashboard title not found")
 
             # Check for navigation cards - Dashboard has 6 cards in n-grid
-            cards = page.locator('.n-card')
+            cards = page.locator(".n-card")
             if cards.count() >= 6:
                 print(f"   [OK] Found {cards.count()} navigation cards")
             else:
@@ -67,7 +67,11 @@ def test_dashboard_navigation():
                 {"name": "Skills", "url": "/skills", "button_text": "Manage Skills"},
                 {"name": "Work Experience", "url": "/work-experience", "button_text": "Manage"},
                 {"name": "Certifications", "url": "/certifications", "button_text": "Manage"},
-                {"name": "Portfolio Projects", "url": "/portfolio-projects", "button_text": "Manage"},
+                {
+                    "name": "Portfolio Projects",
+                    "url": "/portfolio-projects",
+                    "button_text": "Manage",
+                },
                 {"name": "Miniatures", "url": "/miniatures", "button_text": "Manage"},
             ]
 
@@ -85,11 +89,15 @@ def test_dashboard_navigation():
 
                 if card_title.count() > 0:
                     # Find the card containing this title
-                    card = page.locator(f'.n-card:has(h3.card-title:has-text("{nav_test["name"]}"))').first
+                    card = page.locator(
+                        f'.n-card:has(h3.card-title:has-text("{nav_test["name"]}"))'
+                    ).first
 
                     if card.count() > 0:
                         # Find the button within this specific card
-                        nav_button = card.locator(f'button:has-text("{nav_test["button_text"]}")').first
+                        nav_button = card.locator(
+                            f'button:has-text("{nav_test["button_text"]}")'
+                        ).first
 
                         if nav_button.count() > 0:
                             nav_button.click()
@@ -97,13 +105,19 @@ def test_dashboard_navigation():
                             page.wait_for_timeout(500)
 
                             # Verify navigation occurred (check if URL contains the expected path)
-                            if nav_test['url'] in page.url:
+                            if nav_test["url"] in page.url:
                                 print(f"   [OK] Navigated to {nav_test['name']}: {page.url}")
-                                page.screenshot(path=f"/tmp/dashboard_{step_num:02d}_{nav_test['name'].lower().replace(' ', '_')}.png")
+                                page.screenshot(
+                                    path=f"/tmp/dashboard_{step_num:02d}_{nav_test['name'].lower().replace(' ', '_')}.png"
+                                )
                             else:
-                                print(f"   [FAIL] Expected URL to contain '{nav_test['url']}', got: {page.url}")
+                                print(
+                                    f"   [FAIL] Expected URL to contain '{nav_test['url']}', got: {page.url}"
+                                )
                         else:
-                            print(f"   [WARN] Button '{nav_test['button_text']}' not found for {nav_test['name']}")
+                            print(
+                                f"   [WARN] Button '{nav_test['button_text']}' not found for {nav_test['name']}"
+                            )
                     else:
                         print(f"   [WARN] Card not found for {nav_test['name']}")
                 else:
