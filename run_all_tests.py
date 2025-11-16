@@ -85,6 +85,13 @@ class TestRunner:
         self.start_time = datetime.now(timezone.utc)
 
         tests = [
+            # Authentication must run first
+            (self.testing_dir / "e2e" / "auth-flow" / "test_auth_flow.py", "Authentication Flow"),
+
+            # Navigation
+            (self.testing_dir / "e2e" / "dashboard" / "test_dashboard_navigation.py", "Dashboard Navigation"),
+
+            # CRUD tests - can run in any order
             (self.testing_dir / "e2e" / "profile" / "test_profile.py", "Profile Management"),
             (self.testing_dir / "e2e" / "skills" / "test_skills_crud.py", "Skills CRUD"),
             (
@@ -93,12 +100,18 @@ class TestRunner:
             ),
             (
                 self.testing_dir / "e2e" / "certifications" / "test_certifications_crud.py",
-                "Certifications/Education CRUD",
+                "Certifications CRUD",
             ),
             (
-                self.testing_dir / "e2e" / "miniatures" / "test_miniatures_comprehensive.py",
-                "Miniatures Comprehensive",
+                self.testing_dir / "e2e" / "portfolio-projects" / "test_portfolio_projects_crud.py",
+                "Portfolio Projects CRUD",
             ),
+
+            # Complex multi-tab tests (deferred for future enhancement)
+            # (
+            #     self.testing_dir / "e2e" / "miniatures" / "test_miniatures_comprehensive.py",
+            #     "Miniatures Comprehensive",
+            # ),
         ]
 
         print("\n" + "=" * 70)

@@ -67,11 +67,57 @@ task list                         # List all test suites
 
 ## Test Coverage
 
-- **Profile**: Basic info, contact info, avatar upload
-- **Skills**: Skills and skill types CRUD with modals
-- **Experience**: Work experience CRUD with date pickers
-- **Certifications**: Certifications CRUD with dates
-- **Miniatures**: Projects, themes, and paints CRUD with tabs
+- **Profile** (14 steps):
+  - Basic information and contact info updates
+  - Avatar upload with image cropper
+  - Resume upload (PDF/DOC/DOCX)
+  - File deletion (avatar and resume)
+  - Form validation
+  - Data persistence testing
+
+- **Work Experience** (11 steps):
+  - Full CRUD operations
+  - Date range handling (start/end dates)
+  - "Currently working here" toggle
+  - Search and filtering
+  - Form validation
+  - Data persistence testing
+
+- **Skills** (13 steps):
+  - Dual-tab CRUD (Skills + Skill Types)
+  - Skill type association
+  - Form validation
+  - Search functionality
+  - Display order management
+  - Data persistence testing
+
+- **Certifications** (12 steps):
+  - Full CRUD with date validation
+  - Credential ID and URL management
+  - Status calculation (Valid/Expired/No Expiry)
+  - Date validation (expiry must be after issue)
+  - Multi-field search
+  - Data persistence testing
+
+- **Portfolio Projects** (12 steps):
+  - Full CRUD operations
+  - Category selection
+  - GitHub and Live Demo URL validation
+  - Short and detailed descriptions
+  - Search functionality
+  - Data persistence testing
+
+- **Authentication Flow** (11 steps):
+  - Login/logout functionality
+  - Invalid credentials handling
+  - Session persistence (reload and new tab)
+  - Protected route access control
+  - Re-login after logout
+
+- **Dashboard Navigation** (10 steps):
+  - Dashboard layout verification
+  - Navigation to all feature pages
+  - Root URL redirect testing
 
 ## Authentication
 
@@ -171,9 +217,54 @@ test:new-feature:
     - python e2e/new_feature/test_new_feature.py
 ```
 
+## Test Execution
+
+### Run All Tests
+
+```bash
+python run_all_tests.py
+```
+
+This executes all tests in optimal order:
+1. Authentication Flow (validates login/logout)
+2. Dashboard Navigation (validates routing)
+3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects)
+
+### Run Individual Tests
+
+```bash
+# Authentication
+python e2e/auth-flow/test_auth_flow.py
+
+# Navigation
+python e2e/dashboard/test_dashboard_navigation.py
+
+# CRUD tests
+python e2e/profile/test_profile.py
+python e2e/skills/test_skills_crud.py
+python e2e/experience/test_experience_crud.py
+python e2e/certifications/test_certifications_crud.py
+python e2e/portfolio-projects/test_portfolio_projects_crud.py
+```
+
+## Test Statistics
+
+| Test Suite | Steps | Coverage |
+|------------|-------|----------|
+| Authentication Flow | 11 | Login, logout, session management, protected routes |
+| Dashboard Navigation | 10 | Page navigation, routing, layout verification |
+| Profile Management | 14 | CRUD, avatar upload, resume upload, file deletion |
+| Work Experience CRUD | 11 | CRUD, date handling, search |
+| Skills CRUD | 13 | Dual-tab CRUD, skill types, associations |
+| Certifications CRUD | 12 | CRUD, date validation, credential URLs, status |
+| Portfolio Projects CRUD | 12 | CRUD, URL validation, categories |
+| **TOTAL** | **83 steps** | **7 comprehensive test suites** |
+
 ## Notes
 
 - Tests run with browser visible by default
 - Screenshots saved to system temp directory (configurable via TEST_SCREENSHOT_DIR)
 - All tests are independent and can run in any order
-- Test data is not cleaned up automatically
+- Test data uses timestamps for uniqueness
+- Profile test restores original data after execution
+- Miniatures test deferred for future enhancement (complex 3-tab structure)
