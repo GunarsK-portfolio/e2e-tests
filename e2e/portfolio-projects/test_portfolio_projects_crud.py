@@ -7,7 +7,7 @@ Tests: Full CRUD with validation, data persistence, URL validation, dates, techn
 import sys
 import time
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -27,11 +27,10 @@ def test_portfolio_projects_crud():
             print("[ERROR] Authentication failed")
             return False
 
-        print("\n=== PORTFOLIO PROJECTS COMPREHENSIVE E2E TEST ===\n")
+        print("\n=== PORTFOLIO PROJECTS E2E TEST ===\n")
 
         # Test data - unique project title using timestamp
         test_title = f"E2E Test Project {int(time.time())}"
-        test_category = "Web Application"
         test_role = "Full Stack Developer"
         test_description = "E2E automated testing project for comprehensive validation"
         test_github_url = "https://github.com/test/e2e-project"
@@ -251,7 +250,7 @@ def test_portfolio_projects_crud():
 
                 search_row = page.locator(f'tr:has-text("{updated_title}")')
                 expect(search_row).to_be_visible()
-                print(f"   [OK] Search by role found entry")
+                print("   [OK] Search by role found entry")
 
                 # Clear search
                 search_input.fill("")
@@ -336,8 +335,6 @@ def test_portfolio_projects_crud():
             for i in range(1, 13):
                 print(f"  - portfolio_{i:02d}_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/portfolio_error_assertion.png")
@@ -352,6 +349,8 @@ def test_portfolio_projects_crud():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()

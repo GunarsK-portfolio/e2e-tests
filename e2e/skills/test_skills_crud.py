@@ -7,7 +7,7 @@ Tests: Full CRUD with validation, data persistence, skill types, and dual-tab ma
 import sys
 import time
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -27,7 +27,7 @@ def test_skills_crud():
             print("[ERROR] Authentication failed")
             return False
 
-        print("\n=== SKILLS COMPREHENSIVE E2E TEST ===\n")
+        print("\n=== SKILLS E2E TEST ===\n")
 
         # Test data - unique names using timestamp
         test_type_name = f"E2E Test Type {int(time.time())}"
@@ -36,7 +36,6 @@ def test_skills_crud():
         updated_type_desc = "Updated: Advanced E2E testing category"
 
         test_skill_name = f"E2E Test Skill {int(time.time())}"
-        updated_skill_name = f"{test_skill_name} Updated"
 
         try:
             # Navigate to Skills page
@@ -77,7 +76,7 @@ def test_skills_crud():
             page.wait_for_timeout(500)
 
             # Wait for modal to be fully removed
-            page.wait_for_selector('[role="dialog"]', state='detached', timeout=3000)
+            page.wait_for_selector('[role="dialog"]', state="detached", timeout=3000)
             print("   [OK] Modal closed")
 
             # STEP 2: Select and edit existing skill
@@ -85,11 +84,11 @@ def test_skills_crud():
             page.wait_for_timeout(500)
 
             # Get first skill from table
-            first_skill_row = page.locator('tbody tr').first
+            first_skill_row = page.locator("tbody tr").first
             expect(first_skill_row).to_be_visible(timeout=5000)
 
             # Get existing skill name
-            existing_skill_name = first_skill_row.locator('td').first.text_content().strip()
+            existing_skill_name = first_skill_row.locator("td").first.text_content().strip()
             print(f"   [OK] Found existing skill: '{existing_skill_name}'")
 
             # Click edit
@@ -136,7 +135,7 @@ def test_skills_crud():
 
             skill_row = page.locator(f'tr:has-text("{test_skill_name}")')
             expect(skill_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated skill found in search results")
+            print("   [OK] Updated skill found in search results")
 
             # Clear search
             search_input.fill("")
@@ -444,8 +443,6 @@ def test_skills_crud():
             for i in range(1, 24):
                 print(f"  - skills_{i:02d}_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/skills_error_assertion.png")
@@ -460,6 +457,8 @@ def test_skills_crud():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()

@@ -7,7 +7,7 @@ Tests: Full CRUD with validation, data persistence, date handling, and credentia
 import sys
 import time
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -27,7 +27,7 @@ def test_certifications_crud():
             print("[ERROR] Authentication failed")
             return False
 
-        print("\n=== CERTIFICATIONS COMPREHENSIVE E2E TEST ===\n")
+        print("\n=== CERTIFICATIONS E2E TEST ===\n")
 
         # Test data - unique certification name using timestamp
         test_name = f"E2E Test Certification {int(time.time())}"
@@ -108,18 +108,22 @@ def test_certifications_crud():
                 print("   [WARN] Date picker fields not found")
 
             # Expand Credential Details section
-            credential_section = page.locator('text=Credential Details').first
+            credential_section = page.locator("text=Credential Details").first
             if credential_section.count() > 0:
                 credential_section.click()
                 page.wait_for_timeout(500)
                 print("   [OK] Expanded Credential Details section")
 
                 # Fill credential fields
-                credential_id_input = page.locator('input[placeholder="Enter credential or reference ID (optional)"]').first
+                credential_id_input = page.locator(
+                    'input[placeholder="Enter credential or reference ID (optional)"]'
+                ).first
                 credential_id_input.fill(test_credential_id)
                 page.wait_for_timeout(200)
 
-                credential_url_input = page.locator('input[placeholder="Enter URL to verify credential (optional)"]').first
+                credential_url_input = page.locator(
+                    'input[placeholder="Enter URL to verify credential (optional)"]'
+                ).first
                 credential_url_input.fill(test_credential_url)
                 page.wait_for_timeout(200)
                 print("   [OK] Credential details filled")
@@ -146,7 +150,7 @@ def test_certifications_crud():
             page.screenshot(path="/tmp/certifications_04_in_table.png")
 
             # Verify status tag shows "Valid"
-            status_tag = cert_row.locator('text=Valid')
+            status_tag = cert_row.locator("text=Valid")
             if status_tag.count() > 0:
                 print("   [OK] Certification status shows 'Valid'")
 
@@ -181,7 +185,7 @@ def test_certifications_crud():
             page.wait_for_timeout(200)
 
             # Expand Credential Details section to update credential ID
-            credential_section = page.locator('text=Credential Details').first
+            credential_section = page.locator("text=Credential Details").first
             if credential_section.count() > 0:
                 credential_section.click()
                 page.wait_for_timeout(500)
@@ -266,7 +270,7 @@ def test_certifications_crud():
 
                 search_row = page.locator(f'tr:has-text("{updated_name}")')
                 expect(search_row).to_be_visible()
-                print(f"   [OK] Search by credential ID found entry")
+                print("   [OK] Search by credential ID found entry")
 
                 # Clear search
                 search_input.fill("")
@@ -392,8 +396,6 @@ def test_certifications_crud():
             for i in range(1, 13):
                 print(f"  - certifications_{i:02d}_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/certifications_error_assertion.png")
@@ -408,6 +410,8 @@ def test_certifications_crud():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()

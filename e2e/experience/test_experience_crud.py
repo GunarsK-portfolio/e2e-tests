@@ -7,7 +7,7 @@ Tests: Full CRUD with validation, data persistence, and date handling
 import sys
 import time
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -27,7 +27,7 @@ def test_experience_crud():
             print("[ERROR] Authentication failed")
             return False
 
-        print("\n=== WORK EXPERIENCE COMPREHENSIVE E2E TEST ===\n")
+        print("\n=== WORK EXPERIENCE E2E TEST ===\n")
 
         # Test data - unique company name using timestamp
         test_company = f"E2E Test Company {int(time.time())}"
@@ -99,7 +99,7 @@ def test_experience_crud():
             page.wait_for_timeout(200)
 
             # Expand Timeline section (not expanded by default)
-            timeline_section = page.locator('text=Timeline').first
+            timeline_section = page.locator("text=Timeline").first
             timeline_section.click()
             page.wait_for_timeout(500)
             print("   [OK] Expanded Timeline section")
@@ -280,8 +280,6 @@ def test_experience_crud():
             for i in range(1, 8):
                 print(f"  - experience_{i:02d}_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/experience_error_assertion.png")
@@ -296,6 +294,8 @@ def test_experience_crud():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()

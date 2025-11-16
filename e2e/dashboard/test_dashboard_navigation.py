@@ -6,7 +6,7 @@ Tests: Dashboard layout, navigation cards, routing to all pages
 
 import sys
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -107,17 +107,22 @@ def test_dashboard_navigation():
                             # Verify navigation occurred (check if URL contains the expected path)
                             if nav_test["url"] in page.url:
                                 print(f"   [OK] Navigated to {nav_test['name']}: {page.url}")
-                                page.screenshot(
-                                    path=f"/tmp/dashboard_{step_num:02d}_{nav_test['name'].lower().replace(' ', '_')}.png"
+                                screenshot_name = (
+                                    f"dashboard_{step_num:02d}_"
+                                    f"{nav_test['name'].lower().replace(' ', '_')}.png"
                                 )
+                                page.screenshot(path=f"/tmp/{screenshot_name}")
                             else:
+                                expected_url = nav_test["url"]
+                                actual_url = page.url
                                 print(
-                                    f"   [FAIL] Expected URL to contain '{nav_test['url']}', got: {page.url}"
+                                    f"   [FAIL] Expected URL to contain "
+                                    f"'{expected_url}', got: {actual_url}"
                                 )
                         else:
-                            print(
-                                f"   [WARN] Button '{nav_test['button_text']}' not found for {nav_test['name']}"
-                            )
+                            button_text = nav_test["button_text"]
+                            nav_name = nav_test["name"]
+                            print(f"   [WARN] Button '{button_text}' " f"not found for {nav_name}")
                     else:
                         print(f"   [WARN] Card not found for {nav_test['name']}")
                 else:
@@ -178,8 +183,6 @@ def test_dashboard_navigation():
                 print(f"  - dashboard_{i:02d}_{nav['name'].lower().replace(' ', '_')}.png")
             print("  - dashboard_09_final.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/dashboard_error_assertion.png")
@@ -194,6 +197,8 @@ def test_dashboard_navigation():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()

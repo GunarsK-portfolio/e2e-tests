@@ -6,7 +6,7 @@ Tests: Login, logout, token refresh, session persistence, unauthorized access
 
 import sys
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.common.config import get_config
 
@@ -173,7 +173,10 @@ def test_auth_flow():
 
             # Look for logout button - could be in various places
             logout_btn = page.locator(
-                'button:has-text("Logout"), button:has-text("Log Out"), a:has-text("Logout"), a:has-text("Log Out")'
+                'button:has-text("Logout"), '
+                'button:has-text("Log Out"), '
+                'a:has-text("Logout"), '
+                'a:has-text("Log Out")'
             ).first
 
             if logout_btn.count() > 0:

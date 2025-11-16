@@ -4,12 +4,12 @@ E2E test for Profile management
 Tests: View, update profile, avatar upload/delete, resume upload/delete, validation
 """
 
-import sys
 import os
+import sys
 import time
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -23,7 +23,7 @@ def create_test_image(width=400, height=400):
     from PIL import Image
 
     # Create a simple colored image
-    img = Image.new('RGB', (width, height), color=(73, 109, 137))
+    img = Image.new("RGB", (width, height), color=(73, 109, 137))
     test_file = Path("/tmp/test_avatar.png")
     img.save(test_file)
     return str(test_file)
@@ -31,8 +31,8 @@ def create_test_image(width=400, height=400):
 
 def create_test_pdf():
     """Create a simple test PDF file"""
-    from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
 
     test_file = Path("/tmp/test_resume.pdf")
     c = canvas.Canvas(str(test_file), pagesize=letter)
@@ -54,7 +54,7 @@ def test_profile():
             print("[ERROR] Authentication failed")
             return False
 
-        print("\n=== PROFILE COMPREHENSIVE E2E TEST ===\n")
+        print("\n=== PROFILE E2E TEST ===\n")
 
         # Test data - unique values using timestamp
         test_name = f"E2E Test User {int(time.time())}"
@@ -132,16 +132,16 @@ def test_profile():
             print("\n3. Storing original profile data...")
             name_input = page.locator('input[placeholder*="full name" i]').first
             if name_input.count() > 0:
-                original_data['name'] = name_input.input_value()
+                original_data["name"] = name_input.input_value()
                 print(f"   [OK] Original name: {original_data['name']}")
 
             title_input = page.locator('input[placeholder*="Senior Software Engineer" i]').first
             if title_input.count() > 0:
-                original_data['title'] = title_input.input_value()
+                original_data["title"] = title_input.input_value()
 
             email_input = page.locator('input[placeholder*="contact@example.com" i]').first
             if email_input.count() > 0:
-                original_data['email'] = email_input.input_value()
+                original_data["email"] = email_input.input_value()
 
             # ========================================
             # STEP 4: Test validation - empty required fields
@@ -158,7 +158,7 @@ def test_profile():
             page.screenshot(path="/tmp/profile_04_validation_error.png")
 
             # Restore name
-            name_input.fill(original_data.get('name', 'Test User'))
+            name_input.fill(original_data.get("name", "Test User"))
             page.wait_for_timeout(200)
 
             # ========================================
@@ -193,7 +193,7 @@ def test_profile():
             location_input.fill(test_location)
             page.wait_for_timeout(200)
 
-            print(f"   [OK] Contact information filled")
+            print("   [OK] Contact information filled")
             page.screenshot(path="/tmp/profile_06_contact_filled.png")
 
             # Save changes
@@ -250,7 +250,7 @@ def test_profile():
 
                     # Verify avatar appears
                     page.wait_for_timeout(1000)
-                    avatar_img = page.locator('.n-avatar img').first
+                    avatar_img = page.locator(".n-avatar img").first
                     if avatar_img.count() > 0:
                         print("   [OK] Avatar image displayed")
                         page.screenshot(path="/tmp/profile_08_avatar_uploaded.png")
@@ -273,8 +273,8 @@ def test_profile():
 
                 # Find the one that accepts PDFs
                 for i in range(upload_inputs.count()):
-                    accept_attr = upload_inputs.nth(i).get_attribute('accept')
-                    if accept_attr and 'pdf' in accept_attr.lower():
+                    accept_attr = upload_inputs.nth(i).get_attribute("accept")
+                    if accept_attr and "pdf" in accept_attr.lower():
                         resume_upload_input = upload_inputs.nth(i)
                         break
 
@@ -285,12 +285,14 @@ def test_profile():
 
                     # Verify resume appears
                     page.wait_for_timeout(1000)
-                    resume_filename = page.locator('text=test_resume.pdf').first
+                    resume_filename = page.locator("text=test_resume.pdf").first
                     if resume_filename.count() > 0:
                         print("   [OK] Resume filename displayed")
 
                         # Check for View Resume button
-                        view_btn = page.locator('button:has-text("View Resume"), a:has-text("View Resume")').first
+                        view_btn = page.locator(
+                            'button:has-text("View Resume"), a:has-text("View Resume")'
+                        ).first
                         if view_btn.count() > 0:
                             print("   [OK] View Resume button found")
 
@@ -381,17 +383,19 @@ def test_profile():
             print("\n14. Restoring original profile data...")
             if original_data:
                 name_input = page.locator('input[placeholder*="full name" i]').first
-                name_input.fill(original_data.get('name', ''))
+                name_input.fill(original_data.get("name", ""))
                 page.wait_for_timeout(200)
 
-                if 'email' in original_data:
+                if "email" in original_data:
                     email_input = page.locator('input[placeholder*="contact@example.com" i]').first
-                    email_input.fill(original_data['email'])
+                    email_input.fill(original_data["email"])
                     page.wait_for_timeout(200)
 
-                if 'title' in original_data:
-                    title_input = page.locator('input[placeholder*="Senior Software Engineer" i]').first
-                    title_input.fill(original_data['title'])
+                if "title" in original_data:
+                    title_input = page.locator(
+                        'input[placeholder*="Senior Software Engineer" i]'
+                    ).first
+                    title_input.fill(original_data["title"])
                     page.wait_for_timeout(200)
 
                 save_btn = page.locator('button:has-text("Save Changes")').first
@@ -429,8 +433,6 @@ def test_profile():
             for i in range(1, 15):
                 print(f"  - profile_{i:02d}_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             page.screenshot(path="/tmp/profile_error_assertion.png")
@@ -445,6 +447,8 @@ def test_profile():
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             # Cleanup test files
             try:
@@ -452,8 +456,8 @@ def test_profile():
                     os.remove(avatar_file)
                 if resume_file and os.path.exists(resume_file):
                     os.remove(resume_file)
-            except:
-                pass
+            except Exception as e:
+                print(f"   [WARNING] Cleanup failed: {e}")
 
             context.close()
             browser.close()
