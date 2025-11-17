@@ -2,7 +2,16 @@
 Common helper functions for E2E tests
 """
 
+import tempfile
+from pathlib import Path
+
 from playwright.sync_api import Page
+
+# ========================================
+# CONSTANTS
+# ========================================
+
+LABEL_OR_PLACEHOLDER_REQUIRED_ERROR = "Either 'label' or 'placeholder' must be provided"
 
 # ========================================
 # SCREENSHOT AND PAGE HELPERS
@@ -11,11 +20,12 @@ from playwright.sync_api import Page
 
 def take_screenshot(page, name, description=""):
     """Take a screenshot with consistent naming"""
-    path = f"/tmp/test_{name}.png"
-    page.screenshot(path=path)
+    temp_dir = Path(tempfile.gettempdir())
+    path = temp_dir / f"test_{name}.png"
+    page.screenshot(path=str(path))
     if description:
         print(f"   [SCREENSHOT] {description}: {path}")
-    return path
+    return str(path)
 
 
 def wait_for_page_load(page):
@@ -58,7 +68,7 @@ def fill_text_input(
         # Fallback to placeholder-based selection
         input_field = page.locator(f'input[placeholder*="{placeholder}" i]').first
     else:
-        raise ValueError("Either 'label' or 'placeholder' must be provided")
+        raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
     input_field.fill(value)
     page.wait_for_timeout(wait_ms)
@@ -93,7 +103,7 @@ def fill_text_input_exact(
         else:
             input_field = page.locator(f'input[placeholder*="{placeholder}" i]').first
     else:
-        raise ValueError("Either 'label' or 'placeholder' must be provided")
+        raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
     input_field.fill(value)
     page.wait_for_timeout(wait_ms)
@@ -119,7 +129,7 @@ def fill_textarea(
         # Fallback to placeholder-based selection
         textarea = page.locator(f'textarea[placeholder*="{placeholder}" i]').first
     else:
-        raise ValueError("Either 'label' or 'placeholder' must be provided")
+        raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
     textarea.fill(value)
     page.wait_for_timeout(wait_ms)
@@ -149,7 +159,7 @@ def fill_number_input(
         # Fallback to placeholder-based selection
         input_field = page.locator(f'input[placeholder*="{placeholder}" i]').first
     else:
-        raise ValueError("Either 'label' or 'placeholder' must be provided")
+        raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
     input_field.fill(str(value))
     page.wait_for_timeout(wait_ms)
@@ -268,7 +278,7 @@ def remove_uploaded_file(page: Page, modal, button_text: str = "Remove Image", w
     return False
 
 
-def verify_file_uploaded(page: Page, modal, file_name: str = None):
+def verify_file_uploaded(modal, file_name: str | None = None):
     """Verify that a file has been uploaded by checking for avatar or file info"""
     # Check for avatar (image preview)
     avatar = modal.locator(".n-avatar").first
@@ -570,7 +580,7 @@ def search_and_verify(
     return verify_row_exists(page, search_term, entity_name, timeout)
 
 
-def verify_cell_contains(row, text: str, description: str = None):
+def verify_cell_contains(row, text: str, description: str | None = None):
     """Verify that a row contains specific text in any cell
 
     Args:

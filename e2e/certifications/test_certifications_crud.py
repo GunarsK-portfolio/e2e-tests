@@ -132,12 +132,12 @@ def test_certifications_crud():
             cert_row = search_and_verify(page, test_name, "certification")
 
             # Verify status tag shows "Valid"
-            verify_cell_contains(cert_row, "Valid", "Certification status shows 'Valid'")
+            assert verify_cell_contains(cert_row, "Valid", "Certification status shows 'Valid'")
 
             # Verify credential link
-            verify_link = cert_row.locator('a:has-text("Verify")')
-            if verify_link.count() > 0:
-                print("   [OK] Credential verification link found")
+            verify_link = cert_row.locator('a:has-text("Verify")').first
+            expect(verify_link).to_be_visible()
+            print("   [OK] Credential verification link found")
 
             clear_search(page)
             take_screenshot(page, "certifications_04_in_table", "Certification in table")
@@ -185,7 +185,9 @@ def test_certifications_crud():
             updated_row = search_and_verify(page, updated_name, "updated certification")
 
             # Verify updated issuer
-            verify_cell_contains(updated_row, updated_issuer, f"Updated issuer '{updated_issuer}' displayed")
+            assert verify_cell_contains(
+                updated_row, updated_issuer, f"Updated issuer '{updated_issuer}' displayed"
+            )
 
             clear_search(page)
             take_screenshot(page, "certifications_06_updated_in_table", "Updated in table")

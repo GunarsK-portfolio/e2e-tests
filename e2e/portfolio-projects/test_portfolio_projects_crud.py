@@ -128,9 +128,7 @@ def test_portfolio_projects_crud():
             # ========================================
             print("1. Navigating to Portfolio Projects page...")
             navigate_to_page(page, BASE_URL, "portfolio-projects")
-            take_screenshot(
-                page, "portfolio_01_page_loaded", "Portfolio Projects page loaded"
-            )
+            take_screenshot(page, "portfolio_01_page_loaded", "Portfolio Projects page loaded")
             print("   [OK] Portfolio Projects page loaded")
 
             # ========================================
@@ -231,9 +229,7 @@ def test_portfolio_projects_crud():
             fill_text_input(page, label="Role", value=updated_role)
             fill_textarea(page, label="Short Description", value=updated_description)
 
-            take_screenshot(
-                page, "portfolio_05_edit_filled", "Portfolio project edit form filled"
-            )
+            take_screenshot(page, "portfolio_05_edit_filled", "Portfolio project edit form filled")
 
             # Save changes
             save_modal(page)

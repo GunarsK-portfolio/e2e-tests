@@ -7,7 +7,7 @@ Tests: Skill Types CRUD, Skills CRUD with type association, validation, search, 
 import sys
 import time
 
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
@@ -19,6 +19,7 @@ from e2e.common.helpers import (
     fill_number_input,
     fill_text_input,
     fill_textarea,
+    get_input_value,
     navigate_to_tab,
     open_add_modal,
     open_edit_modal,
@@ -148,12 +149,13 @@ def test_skills_crud():
             print("   [OK] Edit modal opened")
 
             # Verify existing data loaded
-            name_input = page.locator('input[placeholder*="Frontend" i]').first
-            expect(name_input).to_have_value(test_type_name)
-            print("   [OK] Existing data loaded")
-
-            # Expand section if needed
+            # Expand section first to access the field
             expand_collapse_section(page, "Type Information")
+            current_value = get_input_value(page, "Name")
+            assert (
+                current_value == test_type_name
+            ), f"Expected '{test_type_name}', got '{current_value}'"
+            print("   [OK] Existing data loaded")
 
             # Update fields
             fill_text_input(page, label="Name", value=updated_type_name)
@@ -291,12 +293,13 @@ def test_skills_crud():
             print("   [OK] Edit modal opened")
 
             # Verify existing data loaded
-            skill_input = page.locator('input[placeholder*="Vue.js" i]').first
-            expect(skill_input).to_have_value(test_skill_name)
-            print("   [OK] Existing data loaded")
-
-            # Expand section if needed
+            # Expand section first to access the field
             expand_collapse_section(page, "Skill Information")
+            current_value = get_input_value(page, "Skill Name")
+            assert (
+                current_value == test_skill_name
+            ), f"Expected '{test_skill_name}', got '{current_value}'"
+            print("   [OK] Existing data loaded")
 
             # Update skill name
             fill_text_input(page, label="Skill Name", value=updated_skill_name)

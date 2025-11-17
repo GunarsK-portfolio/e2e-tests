@@ -386,13 +386,12 @@ def test_profile():
             # ========================================
             # STEP 13: Restore original data (cleanup)
             # ========================================
-            if original_name:
-                print("\n13. Restoring original profile data...")
-                fill_text_input(page, label="Full Name", value=original_name)
-                fill_text_input(page, label="Professional Title", value=original_title or "")
-                click_save_button(page)
-                page.wait_for_timeout(1000)
-                print("   [OK] Original data restored")
+            print("\n13. Restoring original profile data...")
+            fill_text_input(page, label="Full Name", value=original_name or "")
+            fill_text_input(page, label="Professional Title", value=original_title or "")
+            click_save_button(page)
+            page.wait_for_timeout(1000)
+            print("   [OK] Original data restored")
 
             # ========================================
             # TEST SUMMARY

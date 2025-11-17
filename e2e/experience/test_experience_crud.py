@@ -241,7 +241,9 @@ def test_experience_crud():
 
             # Verify updated position
             verify_cell_contains(
-                updated_exp_row, updated_position, f"Updated position '{updated_position}' displayed"
+                updated_exp_row,
+                updated_position,
+                f"Updated position '{updated_position}' displayed",
             )
 
             clear_search(page)
