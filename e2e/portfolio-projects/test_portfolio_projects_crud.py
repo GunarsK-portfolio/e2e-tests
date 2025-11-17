@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 E2E test for Portfolio Projects CRUD operations
-Tests: Full CRUD with validation, data persistence, URL validation, dates, technologies
+Tests: Full CRUD, validation, URLs, dates, technologies, search, persistence
 """
 
 import sys
@@ -11,13 +11,91 @@ from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    expand_collapse_section,
+    fill_date_input,
+    fill_text_input,
+    fill_textarea,
+    navigate_to_page,
+    open_add_modal,
+    open_edit_modal,
+    save_modal,
+    search_and_verify,
+    search_table,
+    take_screenshot,
+    verify_cell_contains,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
 
 
+# ========================================
+# PORTFOLIO PROJECTS SPECIFIC HELPERS
+# ========================================
+
+
+def select_category(page, category_name: str):
+    """Select a category from the dropdown
+
+    Args:
+        page: Playwright page object
+        category_name: Name of category to select (e.g., "Web Application", "Mobile Application")
+    """
+    # Find category form item
+    form_item = page.locator('.n-form-item:has(.n-form-item-label:has-text("Category"))').first
+
+    # Click the select to open dropdown
+    select = form_item.locator(".n-select").first
+    select.click()
+    page.wait_for_timeout(300)
+
+    # Click the option
+    option = page.locator(f'div[role="option"]:has-text("{category_name}")').first
+    if option.count() > 0:
+        option.click()
+        page.wait_for_timeout(300)
+        print(f"   [OK] Category '{category_name}' selected")
+    else:
+        # Close dropdown if option not found
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(200)
+        print(f"   [WARN] Category '{category_name}' not found in dropdown")
+
+
+def toggle_ongoing_project(page, enabled: bool = True):
+    """Toggle the 'Ongoing' project switch
+
+    Args:
+        page: Playwright page object
+        enabled: True to enable (ongoing project), False to disable
+    """
+    # Find the switch by its label
+    form_item = page.locator('.n-form-item:has(.n-form-item-label:has-text("Ongoing"))').first
+    switch = form_item.locator(".n-switch").first
+
+    # Check current state
+    is_checked = "n-switch--active" in switch.get_attribute("class")
+
+    # Click if we need to change state
+    if is_checked != enabled:
+        switch.click()
+        page.wait_for_timeout(300)
+        print(f"   [OK] Toggled 'Ongoing' to: {enabled}")
+
+
+# ========================================
+# MAIN TEST
+# ========================================
+
+
 def test_portfolio_projects_crud():
-    """Test Portfolio Projects page full CRUD operations"""
+    """Test Portfolio Projects page CRUD operations"""
     with sync_playwright() as p:
         auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
@@ -29,12 +107,15 @@ def test_portfolio_projects_crud():
 
         print("\n=== PORTFOLIO PROJECTS E2E TEST ===\n")
 
-        # Test data - unique project title using timestamp
+        # Test data
         test_title = f"E2E Test Project {int(time.time())}"
+        test_category = "Web Application"
         test_role = "Full Stack Developer"
         test_description = "E2E automated testing project for comprehensive validation"
         test_github_url = "https://github.com/test/e2e-project"
         test_live_url = "https://e2e-test-project.example.com"
+        test_start_date = "2024-01-15"
+        test_end_date = "2024-06-30"
 
         updated_title = f"{test_title} Updated"
         updated_category = "Mobile Application"
@@ -46,270 +127,236 @@ def test_portfolio_projects_crud():
             # STEP 1: Navigate to Portfolio Projects page
             # ========================================
             print("1. Navigating to Portfolio Projects page...")
-            page.goto(f"{BASE_URL}/portfolio-projects")
-            page.wait_for_load_state("networkidle")
-            page.screenshot(path="/tmp/portfolio_01_page.png")
+            navigate_to_page(page, BASE_URL, "portfolio-projects")
+            take_screenshot(
+                page, "portfolio_01_page_loaded", "Portfolio Projects page loaded"
+            )
             print("   [OK] Portfolio Projects page loaded")
 
             # ========================================
             # STEP 2: Test validation - empty form
             # ========================================
-            print("\n2. Testing validation - empty form submission...")
-            add_btn = page.locator('button:has-text("Add Project")').first
-            assert add_btn.count() > 0, "Add Project button not found"
-            add_btn.click()
-            page.wait_for_timeout(500)
-
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
+            print("\n2. Testing validation - empty portfolio project form...")
+            modal = open_add_modal(page, "Add Project")
             print("   [OK] Add Project modal opened")
 
+            # Expand section if needed
+            expand_collapse_section(page, "Basic Information")
+
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty form submission")
-            page.screenshot(path="/tmp/portfolio_02_validation_error.png")
+            take_screenshot(page, "portfolio_02_validation_error", "Validation error")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
+            close_modal(page)
             print("   [OK] Modal closed")
 
             # ========================================
-            # STEP 3: Create new project
+            # STEP 3: Create new portfolio project
             # ========================================
-            print(f"\n3. Creating new project: '{test_title}'...")
-            add_btn.click()
-            page.wait_for_timeout(500)
+            print(f"\n3. Creating new portfolio project: '{test_title}'...")
+            modal = open_add_modal(page, "Add Project")
 
-            # Fill Basic Information fields (section is expanded by default)
-            title_input = page.locator('input[placeholder*="project title" i]').first
-            title_input.fill(test_title)
-            page.wait_for_timeout(200)
+            # Expand sections if needed
+            expand_collapse_section(page, "Basic Information")
 
-            # Category selection is optional - skip if dropdown doesn't work
-            print("   [OK] Skipping category selection (optional field)")
+            # Fill basic information
+            fill_text_input(page, label="Project Title", value=test_title)
+            select_category(page, test_category)
+            fill_text_input(page, label="Role", value=test_role)
+            fill_textarea(page, label="Short Description", value=test_description)
 
-            # Fill role
-            role_input = page.locator('input[placeholder*="Full Stack Developer" i]').first
-            role_input.fill(test_role)
-            page.wait_for_timeout(200)
+            # Expand and fill Links & Media
+            expand_collapse_section(page, "Links & Media")
+            fill_text_input(page, label="GitHub URL", value=test_github_url)
+            fill_text_input(page, label="Live Demo URL", value=test_live_url)
 
-            # Fill short description
-            desc_textarea = page.locator('textarea[placeholder*="1-2 sentence" i]').first
-            desc_textarea.fill(test_description)
-            page.wait_for_timeout(200)
+            # Expand and fill Timeline
+            expand_collapse_section(page, "Timeline")
+            fill_date_input(page, label="Start Date", date_value=test_start_date)
+            fill_date_input(page, label="End Date", date_value=test_end_date)
 
-            # Expand Links & Media section
-            links_section = page.locator("text=Links & Media").first
-            if links_section.count() > 0:
-                links_section.click()
-                page.wait_for_timeout(500)
-                print("   [OK] Expanded Links & Media section")
-
-                # Fill GitHub URL
-                github_input = page.locator('input[placeholder*="github.com" i]').first
-                github_input.fill(test_github_url)
-                page.wait_for_timeout(200)
-
-                # Fill Live Demo URL
-                live_url_input = page.locator('input[placeholder*="https://" i]').nth(1)
-                if live_url_input.count() > 0:
-                    live_url_input.fill(test_live_url)
-                    page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/portfolio_03_create_form_filled.png")
+            take_screenshot(
+                page, "portfolio_03_create_filled", "Portfolio project create form filled"
+            )
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
-            print("   [OK] Project created successfully")
+            print("   [OK] Portfolio project created successfully")
 
             # ========================================
-            # STEP 4: Verify entry appears in table
+            # STEP 4: Verify project appears in table
             # ========================================
-            print("\n4. Verifying project appears in table...")
-            page.wait_for_timeout(500)
-            project_row = page.locator(f'tr:has-text("{test_title}")')
-            expect(project_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Project '{test_title}' found in table")
-            page.screenshot(path="/tmp/portfolio_04_in_table.png")
-
-            # ========================================
-            # STEP 5: Edit project entry
-            # ========================================
-            print("\n5. Editing project entry...")
-            edit_btn = project_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
+            print("\n4. Verifying portfolio project appears in table...")
             page.wait_for_timeout(500)
 
-            # Verify modal opened
-            assert modal.is_visible(), "Edit modal should be visible"
+            # Search and verify the new project
+            project_row = search_and_verify(page, test_title, "portfolio project")
+
+            # Verify role appears
+            verify_cell_contains(project_row, test_role, f"Role '{test_role}' displayed")
+
+            clear_search(page)
+            take_screenshot(page, "portfolio_04_in_table", "Portfolio project in table")
+
+            # ========================================
+            # STEP 5: Edit portfolio project
+            # ========================================
+            print("\n5. Editing portfolio project...")
+
+            # Search to find the project
+            search_table(page, test_title)
+
+            modal = open_edit_modal(page, test_title)
             print("   [OK] Edit modal opened")
 
-            # Verify existing data loaded (Basic Information section is expanded by default)
+            # Verify existing data loaded
             title_input = page.locator('input[placeholder*="project title" i]').first
             expect(title_input).to_have_value(test_title)
             print("   [OK] Existing data loaded")
 
-            # Update basic fields
-            title_input.fill(updated_title)
-            page.wait_for_timeout(200)
+            # Expand section if needed
+            expand_collapse_section(page, "Basic Information")
 
-            # Update category
-            category_select = page.locator(".n-select").first
-            category_select.click()
-            page.wait_for_timeout(300)
+            # Update fields
+            fill_text_input(page, label="Project Title", value=updated_title)
+            select_category(page, updated_category)
+            fill_text_input(page, label="Role", value=updated_role)
+            fill_textarea(page, label="Short Description", value=updated_description)
 
-            mobile_app_option = page.locator(
-                f'div[role="option"]:has-text("{updated_category}")'
-            ).first
-            if mobile_app_option.count() > 0:
-                mobile_app_option.click()
-                page.wait_for_timeout(300)
-                print(f"   [OK] Updated category: '{updated_category}'")
-            else:
-                # Close dropdown if option not found
-                page.keyboard.press("Escape")
-                page.wait_for_timeout(200)
-
-            # Update role
-            role_input = page.locator('input[placeholder*="Full Stack Developer" i]').first
-            role_input.fill(updated_role)
-            page.wait_for_timeout(200)
-
-            # Update description
-            desc_textarea = page.locator('textarea[placeholder*="1-2 sentence" i]').first
-            desc_textarea.fill(updated_description)
-            page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/portfolio_05_edit_form_filled.png")
+            take_screenshot(
+                page, "portfolio_05_edit_filled", "Portfolio project edit form filled"
+            )
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
-            print("   [OK] Project updated successfully")
+            print("   [OK] Portfolio project updated successfully")
 
             # ========================================
-            # STEP 6: Verify updated data in table
+            # STEP 6: Verify updated project in table
             # ========================================
-            print("\n6. Verifying updated data in table...")
+            print("\n6. Verifying updated portfolio project in table...")
             page.wait_for_timeout(500)
-            updated_row = page.locator(f'tr:has-text("{updated_title}")')
-            expect(updated_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated project '{updated_title}' found in table")
-            page.screenshot(path="/tmp/portfolio_06_updated_in_table.png")
+
+            clear_search(page)
+            updated_project_row = search_and_verify(
+                page, updated_title, "updated portfolio project"
+            )
+
+            # Verify updated role
+            verify_cell_contains(
+                updated_project_row, updated_role, f"Updated role '{updated_role}' displayed"
+            )
+
+            clear_search(page)
+            take_screenshot(page, "portfolio_06_updated", "Portfolio project updated")
 
             # ========================================
-            # STEP 7: Test data persistence - reload page
+            # STEP 7: Test ongoing project toggle
             # ========================================
-            print("\n7. Testing data persistence - reloading page...")
+            print("\n7. Testing ongoing project toggle...")
+
+            # Search and edit
+            search_table(page, updated_title)
+            modal = open_edit_modal(page, updated_title)
+
+            # Expand Timeline section
+            expand_collapse_section(page, "Timeline")
+
+            # Enable "Ongoing"
+            toggle_ongoing_project(page, enabled=True)
+
+            # End date input should be disabled
+            page.wait_for_timeout(300)
+            take_screenshot(page, "portfolio_07_ongoing_toggle", "Ongoing project toggled")
+
+            # Save changes
+            save_modal(page)
+            page.wait_for_timeout(500)
+
+            clear_search(page)
+            take_screenshot(page, "portfolio_08_ongoing_saved", "Ongoing project saved")
+
+            # ========================================
+            # STEP 8: Test search by title
+            # ========================================
+            print("\n8. Testing search by project title...")
+            search_and_verify(page, updated_title, "portfolio project")
+            print("   [OK] Search by title successful")
+
+            clear_search(page)
+
+            # ========================================
+            # STEP 9: Test search by role
+            # ========================================
+            print("\n9. Testing search by role...")
+            search_and_verify(page, updated_role, "portfolio project")
+            print("   [OK] Search by role successful")
+
+            clear_search(page)
+            take_screenshot(page, "portfolio_09_search_tested", "Search tested")
+
+            # ========================================
+            # STEP 10: Test data persistence
+            # ========================================
+            print("\n10. Testing data persistence - reloading page...")
             page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
-            # Verify data still exists
-            persisted_row = page.locator(f'tr:has-text("{updated_title}")')
-            expect(persisted_row).to_be_visible(timeout=5000)
-            print("   [OK] Data persisted after page reload")
+            # Search and verify persistence
+            search_and_verify(page, updated_title, "portfolio project")
+            print("   [OK] Portfolio project data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(
+                page, "portfolio_10_persisted", "Portfolio project persisted after reload"
+            )
 
             # ========================================
-            # STEP 8: Search functionality
+            # STEP 11: Delete portfolio project
             # ========================================
-            print("\n8. Testing search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                # Search by title
-                search_input.fill(updated_title)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_title}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by title found: '{updated_title}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-
-                # Search by role
-                search_input.fill(updated_role)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_title}")')
-                expect(search_row).to_be_visible()
-                print("   [OK] Search by role found entry")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
+            print(f"\n11. Deleting portfolio project '{updated_title}'...")
+            search_table(page, updated_title)
+            delete_row(page, updated_title)
+            print("   [OK] Portfolio project deletion confirmed")
 
             # ========================================
-            # STEP 9: Test URL validation (visual feedback only)
+            # STEP 12: Verify project deletion
             # ========================================
-            print("\n9. Testing URL validation...")
-            # Note: URL validation in Portfolio Projects is visual only (client-side)
-            # It doesn't prevent form submission, just shows error/success status
-            # URLs are optional fields, so we skip strict validation testing
-            print("   [OK] URL fields are optional with visual validation only")
-
-            # ========================================
-            # STEP 10: Delete project entry
-            # ========================================
-            print(f"\n10. Deleting project '{updated_title}'...")
-            delete_row = page.locator(f'tr:has-text("{updated_title}")')
-            delete_btn = delete_row.locator('button[aria-label*="Delete" i]').first
-            delete_btn.click()
+            print("\n12. Verifying portfolio project deletion...")
             page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_title)
 
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Deletion confirmed")
+            verify_row_not_exists(page, updated_title, "portfolio project")
+
+            clear_search(page)
+            take_screenshot(page, "portfolio_11_deleted", "Portfolio project deleted")
 
             # ========================================
-            # STEP 11: Verify deletion
+            # STEP 13: Verify deletion persists after reload
             # ========================================
-            print("\n11. Verifying project deletion...")
-            page.wait_for_timeout(500)
-            deleted_row = page.locator(f'tr:has-text("{updated_title}")')
-
-            # Entry should no longer exist
-            expect(deleted_row).not_to_be_visible()
-            print(f"   [OK] Project '{updated_title}' successfully deleted")
-            page.screenshot(path="/tmp/portfolio_11_after_deletion.png")
-
-            # ========================================
-            # STEP 12: Verify deletion persists
-            # ========================================
-            print("\n12. Verifying deletion persists after reload...")
+            print("\n13. Verifying deletion persists after reload...")
             page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
-            # Verify entry is still gone
-            final_check = page.locator(f'tr:has-text("{updated_title}")')
-            expect(final_check).not_to_be_visible()
-            print("   [OK] Deletion persisted after reload")
+            search_table(page, updated_title)
+            verify_row_not_exists(page, updated_title, "portfolio project")
+            print("   [OK] Portfolio project deletion persisted")
+
+            take_screenshot(page, "portfolio_12_deletion_persisted", "Deletion persisted")
 
             # ========================================
             # TEST SUMMARY
@@ -318,39 +365,37 @@ def test_portfolio_projects_crud():
             print("=== TEST COMPLETED SUCCESSFULLY ===")
             print("=" * 60)
             print("\nTests performed:")
-            print("  [PASS] Page navigation")
-            print("  [PASS] Form validation (empty form)")
-            print("  [PASS] Create project with category and URLs")
+            print("  [PASS] Navigate to Portfolio Projects page")
+            print("  [PASS] Validation (empty form)")
+            print("  [PASS] Create portfolio project with all fields")
             print("  [PASS] Verify creation in table")
-            print("  [PASS] Edit project")
-            print("  [PASS] Update project data")
-            print("  [PASS] Data persistence after reload")
-            print("  [PASS] Search by title")
+            print("  [PASS] Edit portfolio project")
+            print("  [PASS] Verify update in table")
+            print("  [PASS] Test ongoing project toggle")
+            print("  [PASS] Search by project title")
             print("  [PASS] Search by role")
-            print("  [PASS] URL validation")
-            print("  [PASS] Delete project")
+            print("  [PASS] Data persistence after reload")
+            print("  [PASS] Delete portfolio project")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 13):
-                print(f"  - portfolio_{i:02d}_*.png")
+            print("  [PASS] Verify deletion persists after reload")
+            print("\nScreenshots saved to /tmp/test_portfolio_*.png")
+
+            return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/portfolio_error_assertion.png")
+            take_screenshot(page, "portfolio_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/portfolio_error.png")
+            take_screenshot(page, "portfolio_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
             return False
-        else:
-            return True
         finally:
             context.close()
             browser.close()

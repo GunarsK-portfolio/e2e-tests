@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 E2E test for Skills CRUD operations
-Tests: Full CRUD with validation, data persistence, skill types, and dual-tab management
+Tests: Skill Types CRUD, Skills CRUD with type association, validation, search, persistence
 """
 
 import sys
@@ -11,13 +11,33 @@ from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    expand_collapse_section,
+    fill_number_input,
+    fill_text_input,
+    fill_textarea,
+    navigate_to_tab,
+    open_add_modal,
+    open_edit_modal,
+    save_modal,
+    search_and_verify,
+    search_table,
+    select_dropdown_option,
+    take_screenshot,
+    verify_cell_contains,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
 
 
 def test_skills_crud():
-    """Test Skills page full CRUD operations for both skills and skill types"""
+    """Test Skills page CRUD operations for both Skill Types and Skills"""
     with sync_playwright() as p:
         auth_manager = AuthManager()
         browser = p.chromium.launch(headless=False)
@@ -29,386 +49,363 @@ def test_skills_crud():
 
         print("\n=== SKILLS E2E TEST ===\n")
 
-        # Test data - unique names using timestamp
+        # Test data
         test_type_name = f"E2E Test Type {int(time.time())}"
         test_type_desc = "Automated E2E testing skill category"
         updated_type_name = f"{test_type_name} Updated"
-        updated_type_desc = "Updated: Advanced E2E testing category"
+        updated_type_desc = "Updated E2E testing category"
 
         test_skill_name = f"E2E Test Skill {int(time.time())}"
+        updated_skill_name = f"{test_skill_name} Updated"
 
         try:
-            # Navigate to Skills page
-            page.goto(f"{BASE_URL}/skills")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
             # ========================================
-            # PART 1: SKILLS CRUD
+            # PART 1: SKILL TYPES CRUD
             # ========================================
             print("\n" + "=" * 60)
-            print("PART 1: SKILLS CRUD")
+            print("PART 1: SKILL TYPES CRUD")
             print("=" * 60)
 
-            # STEP 1: Test validation - empty form
-            print("\n1. Testing validation - empty skill form...")
-            add_skill_btn = page.locator('button:has-text("Add Skill")').first
-            assert add_skill_btn.count() > 0, "Add Skill button not found"
-            add_skill_btn.click()
-            page.wait_for_timeout(500)
+            # ========================================
+            # STEP 1: Navigate to Skills page and Skill Types tab
+            # ========================================
+            print("\n1. Navigating to Skills page and Skill Types tab...")
+            navigate_to_tab(page, BASE_URL, "skills", "Skill Types")
+            take_screenshot(page, "skills_01_types_tab", "Skill Types tab loaded")
+            print("   [OK] Skill Types tab active")
 
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
-            print("   [OK] Add Skill modal opened")
+            # ========================================
+            # STEP 2: Test validation - empty skill type form
+            # ========================================
+            print("\n2. Testing validation - empty skill type form...")
+            modal = open_add_modal(page, "Add Skill Type")
+            print("   [OK] Add Skill Type modal opened")
+
+            # Expand section if needed
+            expand_collapse_section(page, "Type Information")
 
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
+            save_modal(page)
+
+            # Modal should remain open due to validation
+            assert modal.is_visible(), "Modal should remain open on validation error"
+            print("   [OK] Validation prevents empty form submission")
+            take_screenshot(page, "skills_02_validation_error", "Validation error")
+
+            # Close modal
+            close_modal(page)
+            print("   [OK] Modal closed")
+
+            # ========================================
+            # STEP 3: Create new skill type
+            # ========================================
+            print(f"\n3. Creating new skill type: '{test_type_name}'...")
+            modal = open_add_modal(page, "Add Skill Type")
+
+            # Expand section if needed
+            expand_collapse_section(page, "Type Information")
+
+            # Fill form fields
+            fill_text_input(page, label="Name", value=test_type_name)
+            fill_textarea(page, label="Description", value=test_type_desc)
+            fill_number_input(page, label="Display Order", value=99)
+
+            take_screenshot(page, "skills_03_type_create_filled", "Type create form filled")
+
+            # Save
+            save_modal(page)
+
+            # Verify modal closed
+            assert not modal.is_visible(), "Modal should close after successful save"
+            print("   [OK] Skill type created successfully")
+
+            # ========================================
+            # STEP 4: Verify skill type appears in table
+            # ========================================
+            print("\n4. Verifying skill type appears in table...")
             page.wait_for_timeout(500)
+
+            # Search and verify the new type
+            type_row = search_and_verify(page, test_type_name, "skill type")
+
+            # Verify description
+            verify_cell_contains(
+                type_row, test_type_desc, f"Description '{test_type_desc}' displayed"
+            )
+
+            clear_search(page)
+            take_screenshot(page, "skills_04_type_in_table", "Skill type in table")
+
+            # ========================================
+            # STEP 5: Edit skill type
+            # ========================================
+            print("\n5. Editing skill type...")
+
+            # Search to find the type
+            search_table(page, test_type_name)
+
+            modal = open_edit_modal(page, test_type_name)
+            print("   [OK] Edit modal opened")
+
+            # Verify existing data loaded
+            name_input = page.locator('input[placeholder*="Frontend" i]').first
+            expect(name_input).to_have_value(test_type_name)
+            print("   [OK] Existing data loaded")
+
+            # Expand section if needed
+            expand_collapse_section(page, "Type Information")
+
+            # Update fields
+            fill_text_input(page, label="Name", value=updated_type_name)
+            fill_textarea(page, label="Description", value=updated_type_desc)
+
+            take_screenshot(page, "skills_05_type_edit_filled", "Type edit form filled")
+
+            # Save changes
+            save_modal(page)
+
+            # Verify modal closed
+            assert not modal.is_visible(), "Modal should close after successful update"
+            print("   [OK] Skill type updated successfully")
+
+            # ========================================
+            # STEP 6: Verify updated skill type in table
+            # ========================================
+            print("\n6. Verifying updated skill type in table...")
+            page.wait_for_timeout(500)
+
+            clear_search(page)
+            updated_type_row = search_and_verify(page, updated_type_name, "updated skill type")
+
+            # Verify updated description
+            verify_cell_contains(
+                updated_type_row, updated_type_desc, "Updated description displayed"
+            )
+
+            clear_search(page)
+            take_screenshot(page, "skills_06_type_updated", "Skill type updated")
+
+            # ========================================
+            # STEP 7: Test skill type data persistence
+            # ========================================
+            print("\n7. Testing skill type data persistence - reloading page...")
+            page.reload()
+            wait_for_page_load(page)
+            page.wait_for_timeout(500)
+
+            # Navigate back to Skill Types tab
+            navigate_to_tab(page, BASE_URL, "skills", "Skill Types")
+
+            # Search and verify persistence
+            search_and_verify(page, updated_type_name, "skill type")
+            print("   [OK] Skill type data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(page, "skills_07_type_persisted", "Type persisted after reload")
+
+            # ========================================
+            # PART 2: SKILLS CRUD
+            # ========================================
+            print("\n" + "=" * 60)
+            print("PART 2: SKILLS CRUD")
+            print("=" * 60)
+
+            # ========================================
+            # STEP 8: Switch to Skills tab
+            # ========================================
+            print("\n8. Switching to Skills tab...")
+            navigate_to_tab(page, BASE_URL, "skills", "Skills")
+            print("   [OK] Skills tab active")
+            take_screenshot(page, "skills_08_skills_tab", "Skills tab loaded")
+
+            # ========================================
+            # STEP 9: Test validation - empty skill form
+            # ========================================
+            print("\n9. Testing validation - empty skill form...")
+            modal = open_add_modal(page, "Add Skill")
+            print("   [OK] Add Skill modal opened")
+
+            # Expand section if needed
+            expand_collapse_section(page, "Skill Information")
+
+            # Try to save without filling required fields
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty skill form submission")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(500)
-
-            # Wait for modal to be fully removed
-            page.wait_for_selector('[role="dialog"]', state="detached", timeout=3000)
+            close_modal(page)
             print("   [OK] Modal closed")
 
-            # STEP 2: Select and edit existing skill
-            print("\n2. Finding and editing existing skill...")
-            page.wait_for_timeout(500)
-
-            # Get first skill from table
-            first_skill_row = page.locator("tbody tr").first
-            expect(first_skill_row).to_be_visible(timeout=5000)
-
-            # Get existing skill name
-            existing_skill_name = first_skill_row.locator("td").first.text_content().strip()
-            print(f"   [OK] Found existing skill: '{existing_skill_name}'")
-
-            # Click edit
-            edit_skill_btn = first_skill_row.locator('button[aria-label*="Edit" i]').first
-            edit_skill_btn.click()
-            page.wait_for_timeout(500)
-
-            # Verify modal opened
-            modal = page.locator('[role="dialog"]:has-text("Edit Skill")').first
-            assert modal.is_visible(), "Edit modal should be visible"
-            skill_input = page.locator('input[placeholder="e.g., Vue.js"]').first
-            expect(skill_input).to_have_value(existing_skill_name)
-            print("   [OK] Edit modal opened")
-
-            # Update to test name
-            skill_input.fill(test_skill_name)
-            page.wait_for_timeout(200)
-
-            # Update order
-            order_input = page.locator('input[placeholder="Order"]').last
-            order_input.fill("88")
-            page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/skills_12_skill_edit_filled.png")
-
-            # Save (button shows "Update" when editing)
-            save_btn = page.locator('button:has-text("Update"), button:has-text("Save")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
-
-            # Verify closed
-            modal = page.locator('[role="dialog"]:has-text("Skill")').first
-            assert not modal.is_visible(), "Modal should close"
-            print(f"   [OK] Skill updated to '{test_skill_name}'")
-
-            # STEP 3: Verify updated skill in table using search
-            print("\n3. Verifying updated skill in table...")
-            page.wait_for_timeout(1000)
-
-            # Use search to find the updated skill
-            search_input = page.locator('input[placeholder*="Search skills" i]').first
-            search_input.fill(test_skill_name)
-            page.wait_for_timeout(500)
-
-            skill_row = page.locator(f'tr:has-text("{test_skill_name}")')
-            expect(skill_row).to_be_visible(timeout=5000)
-            print("   [OK] Updated skill found in search results")
-
-            # Clear search
-            search_input.fill("")
-            page.wait_for_timeout(500)
-            page.screenshot(path="/tmp/skills_13_skill_in_table.png")
-
-            # STEP 4: Restore original skill name
-            print(f"\n4. Restoring original skill name '{existing_skill_name}'...")
-            # Search to find the modified skill
-            search_input.fill(test_skill_name)
-            page.wait_for_timeout(500)
-
-            # Get fresh locator after search
-            skill_row = page.locator(f'tr:has-text("{test_skill_name}")').first
-            edit_skill_btn = skill_row.locator('button[aria-label*="Edit" i]').first
-            edit_skill_btn.click()
-            page.wait_for_timeout(500)
-
-            # Restore original name
-            modal = page.locator('[role="dialog"]:has-text("Edit Skill")').first
-            skill_input = page.locator('input[placeholder="e.g., Vue.js"]').first
-            skill_input.fill(existing_skill_name)
-            page.wait_for_timeout(200)
-
-            # Save
-            save_btn = page.locator('button:has-text("Update"), button:has-text("Save")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
-
-            # Verify closed
-            assert not modal.is_visible(), "Modal should close"
-            print(f"   [OK] Restored original skill name: '{existing_skill_name}'")
-
-            # PART 2: SKILL TYPES CRUD
             # ========================================
-            print("\n" + "=" * 60)
-            print("PART 2: SKILL TYPES CRUD")
-            print("=" * 60)
+            # STEP 10: Create new skill with type association
+            # ========================================
+            print(f"\n10. Creating new skill: '{test_skill_name}'...")
+            modal = open_add_modal(page, "Add Skill")
 
-            # STEP 5: Switch to Skill Types tab
-            print("\n5. Switching to Skill Types tab...")
-            types_tab = page.locator("text=Skill Types").first
-            assert types_tab.count() > 0, "Skill Types tab not found"
-            types_tab.click()
-            page.wait_for_timeout(500)
-            print("   [OK] Skill Types tab active")
-            page.screenshot(path="/tmp/skills_11_types_tab.png")
+            # Expand section if needed
+            expand_collapse_section(page, "Skill Information")
 
-            # STEP 12: Test validation - empty form
-            print("\n12. Testing validation - empty form submission...")
-            add_type_btn = page.locator('button:has-text("Add Skill Type")').first
-            assert add_type_btn.count() > 0, "Add Skill Type button not found"
-            add_type_btn.click()
-            page.wait_for_timeout(500)
+            # Fill form fields
+            fill_text_input(page, label="Skill Name", value=test_skill_name)
 
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
-            print("   [OK] Add Skill Type modal opened")
+            # Select skill type (our newly created type)
+            select_dropdown_option(page, modal, option_index=0, label="Skill Type")
+            print("   [OK] Skill type selected")
 
-            # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            # Set display order
+            fill_number_input(page, label="Display Order", value=88)
 
-            # Modal should remain open due to validation
-            assert modal.is_visible(), "Modal should remain open on validation error"
-            print("   [OK] Validation prevents empty form submission")
-            page.screenshot(path="/tmp/skills_03_validation_error.png")
-
-            # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
-            print("   [OK] Modal closed")
-
-            # STEP 13: Create new skill type
-            print(f"\n13. Creating new skill type: '{test_type_name}'...")
-            add_type_btn.click()
-            page.wait_for_timeout(500)
-
-            # Fill fields (Type Information section is expanded by default)
-            name_input = page.locator('input[placeholder="e.g., Frontend"]').first
-            name_input.fill(test_type_name)
-            page.wait_for_timeout(200)
-
-            desc_input = page.locator('textarea[placeholder="Brief description"]').first
-            desc_input.fill(test_type_desc)
-            page.wait_for_timeout(200)
-
-            # Display order input
-            order_input = page.locator('input[placeholder="Order"]').first
-            order_input.fill("99")
-            page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/skills_04_type_create_filled.png")
+            take_screenshot(page, "skills_09_skill_create_filled", "Skill create form filled")
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
-            print("   [OK] Skill type created successfully")
+            print("   [OK] Skill created successfully")
 
-            # STEP 14: Verify type appears in table (may be on page 2 due to pagination)
-            print("\n14. Verifying skill type appears in table...")
+            # ========================================
+            # STEP 11: Verify skill appears in table
+            # ========================================
+            print("\n11. Verifying skill appears in table...")
             page.wait_for_timeout(500)
 
-            # Search for our newly created type to bring it to view
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            search_input.fill(test_type_name)
-            page.wait_for_timeout(500)
+            # Search and verify the new skill
+            search_and_verify(page, test_skill_name, "skill")
 
-            type_row = page.locator(f'tr:has-text("{test_type_name}")')
-            expect(type_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Skill type '{test_type_name}' found in table")
+            clear_search(page)
+            take_screenshot(page, "skills_10_skill_in_table", "Skill in table")
 
-            # Clear search to go back to full list
-            search_input.fill("")
-            page.wait_for_timeout(300)
-            page.screenshot(path="/tmp/skills_05_type_in_table.png")
+            # ========================================
+            # STEP 12: Edit skill
+            # ========================================
+            print("\n12. Editing skill...")
 
-            # STEP 15: Edit skill type
-            print("\n15. Editing skill type...")
+            # Search to find the skill
+            search_table(page, test_skill_name)
 
-            # Search again to ensure it's visible (in case search was cleared)
-            search_input.fill(test_type_name)
-            page.wait_for_timeout(500)
+            modal = open_edit_modal(page, test_skill_name)
+            print("   [OK] Edit modal opened")
 
-            type_row = page.locator(f'tr:has-text("{test_type_name}")')
-            edit_btn = type_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
-
-            # Verify modal opened with existing data
-            assert modal.is_visible(), "Edit modal should be visible"
-            name_input = page.locator('input[placeholder="e.g., Frontend"]').first
-            expect(name_input).to_have_value(test_type_name)
+            # Verify existing data loaded
+            skill_input = page.locator('input[placeholder*="Vue.js" i]').first
+            expect(skill_input).to_have_value(test_skill_name)
             print("   [OK] Existing data loaded")
 
-            # Update fields
-            name_input.fill(updated_type_name)
-            page.wait_for_timeout(200)
+            # Expand section if needed
+            expand_collapse_section(page, "Skill Information")
 
-            desc_input = page.locator('textarea[placeholder*="Brief description" i]').first
-            desc_input.fill(updated_type_desc)
-            page.wait_for_timeout(200)
+            # Update skill name
+            fill_text_input(page, label="Skill Name", value=updated_skill_name)
 
-            page.screenshot(path="/tmp/skills_06_type_edit_filled.png")
+            take_screenshot(page, "skills_11_skill_edit_filled", "Skill edit form filled")
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
-            print("   [OK] Skill type updated successfully")
-
-            # STEP 16: Verify updated type in table
-            print("\n16. Verifying updated skill type in table...")
-            page.wait_for_timeout(500)
-
-            # Search for updated name
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            search_input.fill(updated_type_name)
-            page.wait_for_timeout(500)
-
-            updated_type_row = page.locator(f'tr:has-text("{updated_type_name}")')
-            expect(updated_type_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated skill type '{updated_type_name}' found in table")
-
-            # Clear search
-            search_input.fill("")
-            page.wait_for_timeout(300)
-            page.screenshot(path="/tmp/skills_07_type_updated_in_table.png")
-
-            # STEP 17: Test data persistence for skill type
-            print("\n17. Testing skill type data persistence - reloading page...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Switch back to Skill Types tab
-            types_tab = page.locator("text=Skill Types").first
-            types_tab.click()
-            page.wait_for_timeout(500)
-
-            # Search for the updated type (it may be on page 2)
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            search_input.fill(updated_type_name)
-            page.wait_for_timeout(500)
-
-            # Verify data still exists
-            persisted_type_row = page.locator(f'tr:has-text("{updated_type_name}")')
-            expect(persisted_type_row).to_be_visible(timeout=5000)
-            print("   [OK] Skill type data persisted after page reload")
-
-            # Clear search for next step
-            search_input.fill("")
-            page.wait_for_timeout(500)
-
-            # STEP 18: Test search functionality for skill types
-            print("\n18. Testing skill type search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                search_input.fill(updated_type_name)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_type_name}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search found skill type: '{updated_type_name}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
-
-            # STEP 19: Delete skill type
-            # ========================================
-            print(f"\n19. Deleting skill type '{updated_type_name}'...")
-            # Switch to Skill Types tab
-            types_tab = page.locator("text=Skill Types").first
-            types_tab.click()
-            page.wait_for_timeout(500)
-
-            # Search for the type to delete
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            search_input.fill(updated_type_name)
-            page.wait_for_timeout(500)
-
-            delete_type_row = page.locator(f'tr:has-text("{updated_type_name}")')
-            delete_type_btn = delete_type_row.locator('button[aria-label*="Delete" i]').first
-            delete_type_btn.click()
-            page.wait_for_timeout(500)
-
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Skill type deletion confirmed")
-
-            # STEP 20: Verify skill type deletion
-            print("\n20. Verifying skill type deletion...")
-            page.wait_for_timeout(1000)
-            deleted_type_row = page.locator(f'tr:has-text("{updated_type_name}")')
-            expect(deleted_type_row).not_to_be_visible()
-            print(f"   [OK] Skill type '{updated_type_name}' successfully deleted")
-            page.screenshot(path="/tmp/skills_22_type_deleted.png")
-
-            # STEP 21: Verify skill type deletion persists
-            print("\n21. Verifying skill type deletion persists after reload...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Switch to Skill Types tab
-            types_tab = page.locator("text=Skill Types").first
-            types_tab.click()
-            page.wait_for_timeout(500)
-
-            final_type_check = page.locator(f'tr:has-text("{updated_type_name}")')
-            expect(final_type_check).not_to_be_visible()
-            print("   [OK] Skill type deletion persisted after reload")
+            print("   [OK] Skill updated successfully")
 
             # ========================================
-            # TEST SUMMARY
+            # STEP 13: Verify updated skill in table
+            # ========================================
+            print("\n13. Verifying updated skill in table...")
+            page.wait_for_timeout(500)
+
+            clear_search(page)
+            search_and_verify(page, updated_skill_name, "updated skill")
+
+            clear_search(page)
+            take_screenshot(page, "skills_12_skill_updated", "Skill updated")
+
+            # ========================================
+            # STEP 14: Test skill data persistence
+            # ========================================
+            print("\n14. Testing skill data persistence - reloading page...")
+            page.reload()
+            wait_for_page_load(page)
+            page.wait_for_timeout(500)
+
+            # Should land on Skills tab by default
+            search_and_verify(page, updated_skill_name, "skill")
+            print("   [OK] Skill data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(page, "skills_13_skill_persisted", "Skill persisted after reload")
+
+            # ========================================
+            # STEP 15: Delete skill
+            # ========================================
+            print(f"\n15. Deleting skill '{updated_skill_name}'...")
+            search_table(page, updated_skill_name)
+            delete_row(page, updated_skill_name)
+            print("   [OK] Skill deletion confirmed")
+
+            # ========================================
+            # STEP 16: Verify skill deletion
+            # ========================================
+            print("\n16. Verifying skill deletion...")
+            page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_skill_name)
+
+            verify_row_not_exists(page, updated_skill_name, "skill")
+
+            clear_search(page)
+            take_screenshot(page, "skills_14_skill_deleted", "Skill deleted")
+
+            # ========================================
+            # STEP 17: Delete skill type
+            # ========================================
+            print(f"\n17. Deleting skill type '{updated_type_name}'...")
+
+            # Navigate to Skill Types tab
+            navigate_to_tab(page, BASE_URL, "skills", "Skill Types")
+
+            search_table(page, updated_type_name)
+            delete_row(page, updated_type_name)
+            print("   [OK] Skill type deletion confirmed")
+
+            # ========================================
+            # STEP 18: Verify skill type deletion
+            # ========================================
+            print("\n18. Verifying skill type deletion...")
+            page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_type_name)
+
+            verify_row_not_exists(page, updated_type_name, "skill type")
+
+            clear_search(page)
+            take_screenshot(page, "skills_15_type_deleted", "Skill type deleted")
+
+            # ========================================
+            # STEP 19: Verify deletions persist after reload
+            # ========================================
+            print("\n19. Verifying deletions persist after reload...")
+            page.reload()
+            wait_for_page_load(page)
+            page.wait_for_timeout(500)
+
+            # Check skill type
+            navigate_to_tab(page, BASE_URL, "skills", "Skill Types")
+            search_table(page, updated_type_name)
+            verify_row_not_exists(page, updated_type_name, "skill type")
+            print("   [OK] Skill type deletion persisted")
+
+            # Check skill
+            navigate_to_tab(page, BASE_URL, "skills", "Skills")
+            search_table(page, updated_skill_name)
+            verify_row_not_exists(page, updated_skill_name, "skill")
+            print("   [OK] Skill deletion persisted")
+
+            take_screenshot(page, "skills_16_deletions_persisted", "Deletions persisted")
+
+            # ========================================
             # TEST SUMMARY
             # ========================================
             print("\n" + "=" * 60)
@@ -416,49 +413,45 @@ def test_skills_crud():
             print("=" * 60)
             print("\nTests performed:")
             print("\n  SKILL TYPES:")
-            print("  [PASS] Page navigation and tab switching")
-            print("  [PASS] Form validation (empty form)")
+            print("  [PASS] Navigate to Skill Types tab")
+            print("  [PASS] Validation (empty form)")
             print("  [PASS] Create skill type")
             print("  [PASS] Verify creation in table")
             print("  [PASS] Edit skill type")
-            print("  [PASS] Update skill type data")
+            print("  [PASS] Verify update in table")
             print("  [PASS] Data persistence after reload")
-            print("  [PASS] Search functionality")
             print("  [PASS] Delete skill type")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
             print("\n  SKILLS:")
-            print("  [PASS] Tab switching")
-            print("  [PASS] Form validation (empty form)")
+            print("  [PASS] Navigate to Skills tab")
+            print("  [PASS] Validation (empty form)")
             print("  [PASS] Create skill with type association")
             print("  [PASS] Verify creation in table")
             print("  [PASS] Edit skill")
-            print("  [PASS] Update skill data")
+            print("  [PASS] Verify update in table")
             print("  [PASS] Data persistence after reload")
-            print("  [PASS] Search functionality")
             print("  [PASS] Delete skill")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 24):
-                print(f"  - skills_{i:02d}_*.png")
+            print("\n  OVERALL:")
+            print("  [PASS] Verify deletions persist after reload")
+            print("\nScreenshots saved to /tmp/test_skills_*.png")
+
+            return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/skills_error_assertion.png")
+            take_screenshot(page, "skills_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/skills_error.png")
+            take_screenshot(page, "skills_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
             return False
-        else:
-            return True
         finally:
             context.close()
             browser.close()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 E2E test for Certifications CRUD operations
-Tests: Full CRUD with validation, data persistence, date handling, and credential verification
+Tests: Validation, Create, Edit, Search, Persistence, Delete, Date validation
 """
 
 import sys
@@ -11,6 +11,24 @@ from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    expand_collapse_section,
+    fill_date_input,
+    fill_text_input,
+    navigate_to_page,
+    open_add_modal,
+    open_edit_modal,
+    save_modal,
+    search_and_verify,
+    search_table,
+    take_screenshot,
+    verify_cell_contains,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -34,106 +52,71 @@ def test_certifications_crud():
         test_issuer = "E2E Testing Authority"
         test_credential_id = f"CERT-E2E-{int(time.time())}"
         test_credential_url = "https://example.com/verify"
+        test_issue_date = "2024-01-15"
+        test_expiry_date = "2027-01-15"
+
         updated_name = f"{test_name} Updated"
         updated_issuer = "E2E Advanced Testing Authority"
         updated_credential_id = f"{test_credential_id}-UPD"
+
+        # Date validation test data
+        invalid_issue_date = "2024-06-01"
+        invalid_expiry_date = "2024-01-01"
 
         try:
             # ========================================
             # STEP 1: Navigate to Certifications page
             # ========================================
             print("1. Navigating to Certifications page...")
-            page.goto(f"{BASE_URL}/certifications")
-            page.wait_for_load_state("networkidle")
-            page.screenshot(path="/tmp/certifications_01_page.png")
+            navigate_to_page(page, BASE_URL, "certifications")
+            take_screenshot(page, "certifications_01_page", "Certifications page loaded")
             print("   [OK] Certifications page loaded")
 
             # ========================================
             # STEP 2: Test validation - empty form
             # ========================================
             print("\n2. Testing validation - empty form submission...")
-            add_btn = page.locator('button:has-text("Add Certification")').first
-            assert add_btn.count() > 0, "Add Certification button not found"
-            add_btn.click()
-            page.wait_for_timeout(500)
-
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
+            modal = open_add_modal(page, "Add Certification")
             print("   [OK] Add Certification modal opened")
 
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty form submission")
-            page.screenshot(path="/tmp/certifications_02_validation_error.png")
+            take_screenshot(page, "certifications_02_validation_error", "Validation error shown")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
+            close_modal(page)
             print("   [OK] Modal closed")
 
             # ========================================
             # STEP 3: Create new certification
             # ========================================
             print(f"\n3. Creating new certification: '{test_name}'...")
-            add_btn.click()
-            page.wait_for_timeout(500)
+            modal = open_add_modal(page, "Add Certification")
 
             # Fill Basic Information fields (section is expanded by default)
-            name_input = page.locator('input[placeholder="Enter certification name"]').first
-            name_input.fill(test_name)
-            page.wait_for_timeout(200)
+            fill_text_input(page, label="Certification Name", value=test_name)
+            fill_text_input(page, label="Issuer", value=test_issuer)
 
-            issuer_input = page.locator('input[placeholder="Enter issuing organization"]').first
-            issuer_input.fill(test_issuer)
-            page.wait_for_timeout(200)
-
-            # Fill Issue Date - use date picker
-            issue_date_inputs = page.locator('input[placeholder*="Select Date" i]')
-            if issue_date_inputs.count() >= 2:
-                issue_date_inputs.nth(0).fill("2024-01-15")
-                page.wait_for_timeout(200)
-                print("   [OK] Issue date filled")
-
-                # Fill Expiry Date
-                issue_date_inputs.nth(1).fill("2027-01-15")
-                page.wait_for_timeout(200)
-                print("   [OK] Expiry date filled")
-            else:
-                print("   [WARN] Date picker fields not found")
+            # Fill dates
+            fill_date_input(page, label="Issue Date", date_value=test_issue_date)
+            print("   [OK] Issue date filled")
+            fill_date_input(page, label="Expiry Date", date_value=test_expiry_date)
+            print("   [OK] Expiry date filled")
 
             # Expand Credential Details section
-            credential_section = page.locator("text=Credential Details").first
-            if credential_section.count() > 0:
-                credential_section.click()
-                page.wait_for_timeout(500)
-                print("   [OK] Expanded Credential Details section")
+            expand_collapse_section(page, "Credential Details")
+            fill_text_input(page, label="Credential ID", value=test_credential_id)
+            fill_text_input(page, label="Credential URL", value=test_credential_url)
+            print("   [OK] Credential details filled")
 
-                # Fill credential fields
-                credential_id_input = page.locator(
-                    'input[placeholder="Enter credential or reference ID (optional)"]'
-                ).first
-                credential_id_input.fill(test_credential_id)
-                page.wait_for_timeout(200)
-
-                credential_url_input = page.locator(
-                    'input[placeholder="Enter URL to verify credential (optional)"]'
-                ).first
-                credential_url_input.fill(test_credential_url)
-                page.wait_for_timeout(200)
-                print("   [OK] Credential details filled")
-
-            page.screenshot(path="/tmp/certifications_03_create_form_filled.png")
+            take_screenshot(page, "certifications_03_create_form_filled", "Create form filled")
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
@@ -144,62 +127,49 @@ def test_certifications_crud():
             # ========================================
             print("\n4. Verifying certification appears in table...")
             page.wait_for_timeout(500)
-            cert_row = page.locator(f'tr:has-text("{test_name}")')
-            expect(cert_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Certification '{test_name}' found in table")
-            page.screenshot(path="/tmp/certifications_04_in_table.png")
+
+            # Search and verify the new certification
+            cert_row = search_and_verify(page, test_name, "certification")
 
             # Verify status tag shows "Valid"
-            status_tag = cert_row.locator("text=Valid")
-            if status_tag.count() > 0:
-                print("   [OK] Certification status shows 'Valid'")
+            verify_cell_contains(cert_row, "Valid", "Certification status shows 'Valid'")
 
             # Verify credential link
             verify_link = cert_row.locator('a:has-text("Verify")')
             if verify_link.count() > 0:
                 print("   [OK] Credential verification link found")
 
+            clear_search(page)
+            take_screenshot(page, "certifications_04_in_table", "Certification in table")
+
             # ========================================
             # STEP 5: Edit certification entry
             # ========================================
             print("\n5. Editing certification entry...")
-            edit_btn = cert_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
 
-            # Verify modal opened
-            assert modal.is_visible(), "Edit modal should be visible"
+            # Search to find the certification
+            search_table(page, test_name)
+
+            modal = open_edit_modal(page, test_name)
             print("   [OK] Edit modal opened")
 
-            # Verify existing data loaded (Basic Information section is expanded by default)
+            # Verify existing data loaded
             name_input = page.locator('input[placeholder*="certification name" i]').first
             expect(name_input).to_have_value(test_name)
             print("   [OK] Existing data loaded")
 
             # Update basic fields
-            name_input.fill(updated_name)
-            page.wait_for_timeout(200)
-
-            issuer_input = page.locator('input[placeholder*="issuing organization" i]').first
-            issuer_input.fill(updated_issuer)
-            page.wait_for_timeout(200)
+            fill_text_input(page, label="Certification Name", value=updated_name)
+            fill_text_input(page, label="Issuer", value=updated_issuer)
 
             # Expand Credential Details section to update credential ID
-            credential_section = page.locator("text=Credential Details").first
-            if credential_section.count() > 0:
-                credential_section.click()
-                page.wait_for_timeout(500)
+            expand_collapse_section(page, "Credential Details")
+            fill_text_input(page, label="Credential ID", value=updated_credential_id)
 
-                credential_id_input = page.locator('input[placeholder*="credential" i]').first
-                credential_id_input.fill(updated_credential_id)
-                page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/certifications_05_edit_form_filled.png")
+            take_screenshot(page, "certifications_05_edit_form_filled", "Edit form filled")
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
@@ -210,165 +180,95 @@ def test_certifications_crud():
             # ========================================
             print("\n6. Verifying updated data in table...")
             page.wait_for_timeout(500)
-            updated_row = page.locator(f'tr:has-text("{updated_name}")')
-            expect(updated_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated certification '{updated_name}' found in table")
+
+            clear_search(page)
+            updated_row = search_and_verify(page, updated_name, "updated certification")
 
             # Verify updated issuer
-            issuer_cell = updated_row.locator(f'td:has-text("{updated_issuer}")')
-            if issuer_cell.count() > 0:
-                print(f"   [OK] Updated issuer '{updated_issuer}' displayed")
+            verify_cell_contains(updated_row, updated_issuer, f"Updated issuer '{updated_issuer}' displayed")
 
-            page.screenshot(path="/tmp/certifications_06_updated_in_table.png")
+            clear_search(page)
+            take_screenshot(page, "certifications_06_updated_in_table", "Updated in table")
 
             # ========================================
-            # STEP 7: Test data persistence - reload page
+            # STEP 7: Test search functionality
             # ========================================
-            print("\n7. Testing data persistence - reloading page...")
+            print("\n7. Testing search functionality...")
+
+            # Search by name
+            search_and_verify(page, updated_name, "certification")
+            print(f"   [OK] Search by name found: '{updated_name}'")
+            take_screenshot(page, "certifications_07a_search_by_name", "Search by name")
+
+            # Search by issuer
+            clear_search(page)
+            search_and_verify(page, updated_issuer, "certification")
+            print(f"   [OK] Search by issuer found: '{updated_issuer}'")
+            take_screenshot(page, "certifications_07b_search_by_issuer", "Search by issuer")
+
+            clear_search(page)
+
+            # ========================================
+            # STEP 8: Test data persistence - reload page
+            # ========================================
+            print("\n8. Testing data persistence - reloading page...")
             page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
             # Verify data still exists
-            persisted_row = page.locator(f'tr:has-text("{updated_name}")')
-            expect(persisted_row).to_be_visible(timeout=5000)
+            search_and_verify(page, updated_name, "certification")
             print("   [OK] Data persisted after page reload")
 
-            # ========================================
-            # STEP 8: Search functionality
-            # ========================================
-            print("\n8. Testing search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                # Search by name
-                search_input.fill(updated_name)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_name}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by name found: '{updated_name}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-
-                # Search by issuer
-                search_input.fill(updated_issuer)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_issuer}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by issuer found: '{updated_issuer}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-
-                # Search by credential ID
-                search_input.fill(updated_credential_id)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_name}")')
-                expect(search_row).to_be_visible()
-                print("   [OK] Search by credential ID found entry")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
+            clear_search(page)
+            take_screenshot(page, "certifications_08_persisted", "Data persisted")
 
             # ========================================
             # STEP 9: Test date validation
             # ========================================
             print("\n9. Testing date validation (expiry before issue)...")
-            updated_row = page.locator(f'tr:has-text("{updated_name}")')
-            edit_btn = updated_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
+            modal = open_edit_modal(page, updated_name)
 
             # Try to set expiry date before issue date
-            date_inputs = page.locator('input[placeholder*="Select Date" i]')
-            if date_inputs.count() >= 2:
-                # Set issue date to 2024-06-01
-                date_inputs.nth(0).fill("2024-06-01")
-                page.wait_for_timeout(200)
+            fill_date_input(page, label="Issue Date", date_value=invalid_issue_date)
+            fill_date_input(page, label="Expiry Date", date_value=invalid_expiry_date)
 
-                # Set expiry date to 2024-01-01 (before issue date)
-                date_inputs.nth(1).fill("2024-01-01")
-                page.wait_for_timeout(200)
+            # Try to save
+            save_modal(page)
 
-                # Try to save
-                save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-                save_btn.click()
-                page.wait_for_timeout(500)
+            # Modal should remain open due to validation
+            assert modal.is_visible(), "Modal should remain open on date validation error"
+            print("   [OK] Date validation prevents expiry before issue date")
+            take_screenshot(
+                page, "certifications_09_date_validation_error", "Date validation error"
+            )
 
-                # Modal should remain open due to validation
-                assert modal.is_visible(), "Modal should remain open on date validation error"
-                print("   [OK] Date validation prevents expiry before issue date")
-                page.screenshot(path="/tmp/certifications_09_date_validation_error.png")
+            # Fix dates
+            fill_date_input(page, label="Issue Date", date_value=test_issue_date)
+            fill_date_input(page, label="Expiry Date", date_value=test_expiry_date)
 
-                # Fix dates
-                date_inputs.nth(0).fill("2024-01-15")
-                page.wait_for_timeout(200)
-                date_inputs.nth(1).fill("2027-01-15")
-                page.wait_for_timeout(200)
-
-                save_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Fixed dates and saved successfully")
-            else:
-                print("   [WARN] Date inputs not found, skipping date validation test")
-
-                # Close modal if still open
-                if modal.is_visible():
-                    cancel_btn = page.locator('button:has-text("Cancel")').first
-                    cancel_btn.click()
-                    page.wait_for_timeout(300)
+            save_modal(page)
+            print("   [OK] Fixed dates and saved successfully")
 
             # ========================================
             # STEP 10: Delete certification entry
             # ========================================
             print(f"\n10. Deleting certification '{updated_name}'...")
-            delete_row = page.locator(f'tr:has-text("{updated_name}")')
-            delete_btn = delete_row.locator('button[aria-label*="Delete" i]').first
-            delete_btn.click()
-            page.wait_for_timeout(500)
-
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Deletion confirmed")
+            delete_row(page, updated_name)
+            print("   [OK] Deletion confirmed")
 
             # ========================================
             # STEP 11: Verify deletion
             # ========================================
             print("\n11. Verifying certification deletion...")
             page.wait_for_timeout(500)
-            deleted_row = page.locator(f'tr:has-text("{updated_name}")')
+            clear_search(page)
+            search_table(page, updated_name)
 
-            # Entry should no longer exist
-            expect(deleted_row).not_to_be_visible()
-            print(f"   [OK] Certification '{updated_name}' successfully deleted")
-            page.screenshot(path="/tmp/certifications_11_after_deletion.png")
+            verify_row_not_exists(page, updated_name, "certification")
 
-            # ========================================
-            # STEP 12: Verify deletion persists
-            # ========================================
-            print("\n12. Verifying deletion persists after reload...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Verify entry is still gone
-            final_check = page.locator(f'tr:has-text("{updated_name}")')
-            expect(final_check).not_to_be_visible()
-            print("   [OK] Deletion persisted after reload")
+            clear_search(page)
+            take_screenshot(page, "certifications_11_after_deletion", "After deletion")
 
             # ========================================
             # TEST SUMMARY
@@ -377,41 +277,37 @@ def test_certifications_crud():
             print("=== TEST COMPLETED SUCCESSFULLY ===")
             print("=" * 60)
             print("\nTests performed:")
-            print("  [PASS] Page navigation")
-            print("  [PASS] Form validation (empty form)")
+            print("  [PASS] Navigate to Certifications page")
+            print("  [PASS] Validation (empty form)")
             print("  [PASS] Create certification with dates and credentials")
             print("  [PASS] Verify creation in table with status")
             print("  [PASS] Verify credential link")
             print("  [PASS] Edit certification")
             print("  [PASS] Update certification data")
-            print("  [PASS] Data persistence after reload")
             print("  [PASS] Search by name")
             print("  [PASS] Search by issuer")
-            print("  [PASS] Search by credential ID")
+            print("  [PASS] Data persistence after reload")
             print("  [PASS] Date validation (expiry after issue)")
             print("  [PASS] Delete certification")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 13):
-                print(f"  - certifications_{i:02d}_*.png")
+            print("\nScreenshots saved to /tmp/test_certifications_*.png")
+
+            return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/certifications_error_assertion.png")
+            take_screenshot(page, "certifications_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/certifications_error.png")
+            take_screenshot(page, "certifications_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
             return False
-        else:
-            return True
         finally:
             context.close()
             browser.close()

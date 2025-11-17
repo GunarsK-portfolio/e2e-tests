@@ -9,6 +9,7 @@ import sys
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.common.config import get_config
+from e2e.common.helpers import take_screenshot
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -37,7 +38,7 @@ def test_auth_flow():
             # Should be redirected to login
             expect(page).to_have_url(f"{BASE_URL}/login")
             print("   [OK] Unauthorized user redirected to login")
-            page.screenshot(path="/tmp/auth_01_redirect_to_login.png")
+            take_screenshot(page, "auth_01_redirect_to_login", "Redirected to login")
 
             # ========================================
             # STEP 2: Test login validation - empty credentials
@@ -76,7 +77,7 @@ def test_auth_flow():
                 # Should still be on login page with error
                 expect(page).to_have_url(f"{BASE_URL}/login")
                 print("   [OK] Invalid credentials rejected")
-                page.screenshot(path="/tmp/auth_03_invalid_credentials.png")
+                take_screenshot(page, "auth_03_invalid_credentials", "Invalid credentials error")
             else:
                 print("   [WARN] Login form inputs not found")
 
@@ -92,7 +93,7 @@ def test_auth_flow():
             password_input.fill(PASSWORD)
             page.wait_for_timeout(200)
 
-            page.screenshot(path="/tmp/auth_04_credentials_filled.png")
+            take_screenshot(page, "auth_04_credentials_filled", "Credentials filled")
 
             login_btn.click()
             page.wait_for_load_state("networkidle")
@@ -101,7 +102,7 @@ def test_auth_flow():
             # Should be redirected to dashboard after successful login
             if "dashboard" in page.url:
                 print(f"   [OK] Login successful, redirected to: {page.url}")
-                page.screenshot(path="/tmp/auth_04_dashboard_loaded.png")
+                take_screenshot(page, "auth_04_dashboard_loaded", "Dashboard loaded after login")
             else:
                 print(f"   [FAIL] Login failed, current URL: {page.url}")
                 return False
@@ -181,7 +182,7 @@ def test_auth_flow():
 
             if logout_btn.count() > 0:
                 print("   [OK] Logout button found")
-                page.screenshot(path="/tmp/auth_08_before_logout.png")
+                take_screenshot(page, "auth_08_before_logout", "Before logout")
 
                 logout_btn.click()
                 page.wait_for_load_state("networkidle")
@@ -190,7 +191,7 @@ def test_auth_flow():
                 # Should be redirected to login page after logout
                 expect(page).to_have_url(f"{BASE_URL}/login")
                 print("   [OK] Logout successful, redirected to login")
-                page.screenshot(path="/tmp/auth_08_after_logout.png")
+                take_screenshot(page, "auth_08_after_logout", "After logout")
             else:
                 print("   [WARN] Logout button not found in page")
                 # Try to navigate to dashboard to test if still authenticated
@@ -254,7 +255,7 @@ def test_auth_flow():
             # Should be redirected to dashboard
             if "dashboard" in page.url:
                 print("   [OK] Re-login successful")
-                page.screenshot(path="/tmp/auth_11_relogin_success.png")
+                take_screenshot(page, "auth_11_relogin_success", "Re-login successful")
             else:
                 print("   [FAIL] Re-login failed")
                 return False
@@ -285,14 +286,14 @@ def test_auth_flow():
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/auth_error_assertion.png")
+            take_screenshot(page, "auth_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/auth_error.png")
+            take_screenshot(page, "auth_error", "Error occurred")
             import traceback
 
             traceback.print_exc()

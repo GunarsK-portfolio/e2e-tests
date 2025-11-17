@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 E2E test for Miniatures Paints CRUD operations
-Tests: Full CRUD with validation, color picker, hex validation, paint type association
+Tests: Validation, Create, Edit, Search, Persistence, Delete
 """
 
 import sys
@@ -11,6 +11,23 @@ from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    fill_color_picker,
+    fill_text_input,
+    navigate_to_tab,
+    open_add_modal,
+    open_edit_modal,
+    save_modal,
+    search_and_verify,
+    search_table,
+    select_dropdown_option,
+    take_screenshot,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -33,98 +50,57 @@ def test_paints_crud():
         test_paint_name = f"E2E Test Paint {int(time.time())}"
         test_manufacturer = "Citadel"
         test_color_hex = "#FF5733"
-        test_notes = "E2E automated testing paint"
 
         updated_paint_name = f"{test_paint_name} Updated"
         updated_manufacturer = "Vallejo"
         updated_color_hex = "#33C1FF"
-        updated_notes = "Updated: Advanced E2E testing paint"
 
         try:
             # ========================================
             # STEP 1: Navigate to Miniatures > Paints tab
             # ========================================
             print("1. Navigating to Miniatures > Paints tab...")
-            page.goto(f"{BASE_URL}/miniatures")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Click Paints tab
-            paints_tab = page.locator("text=Paints").first
-            paints_tab.click()
-            page.wait_for_timeout(500)
-            page.screenshot(path="/tmp/paints_01_page.png")
+            navigate_to_tab(page, BASE_URL, "miniatures", "Paints")
+            take_screenshot(page, "paints_01_page", "Paints tab loaded")
             print("   [OK] Paints tab loaded")
 
             # ========================================
             # STEP 2: Test validation - empty form
             # ========================================
             print("\n2. Testing validation - empty paint form...")
-            add_btn = page.locator('button:has-text("Add Paint")').first
-            assert add_btn.count() > 0, "Add Paint button not found"
-            add_btn.click()
-            page.wait_for_timeout(500)
-
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
+            modal = open_add_modal(page, "Add Paint")
             print("   [OK] Add Paint modal opened")
 
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty paint form submission")
-            page.screenshot(path="/tmp/paints_02_validation_error.png")
+            take_screenshot(page, "paints_02_validation_error", "Validation error shown")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
+            close_modal(page)
             print("   [OK] Modal closed")
 
             # ========================================
             # STEP 3: Create new paint
             # ========================================
             print(f"\n3. Creating new paint: '{test_paint_name}'...")
-            add_btn.click()
-            page.wait_for_timeout(500)
+            modal = open_add_modal(page, "Add Paint")
 
-            # Fill paint name
-            name_input = page.locator('input[placeholder*="paint name" i]').first
-            name_input.fill(test_paint_name)
-            page.wait_for_timeout(200)
+            # Fill form fields
+            fill_text_input(page, label="Paint Name", value=test_paint_name)
+            fill_text_input(page, label="Manufacturer", value=test_manufacturer)
+            select_dropdown_option(page, modal, option_index=0, label="Paint Type")
+            print("   [OK] Paint type selected")
+            fill_color_picker(page, modal, test_color_hex, label="Color (Hex)")
+            print("   [OK] Color selected")
 
-            # Fill manufacturer
-            manufacturer_input = page.locator('input[placeholder*="manufacturer" i]').first
-            manufacturer_input.fill(test_manufacturer)
-            page.wait_for_timeout(200)
-
-            # Fill color hex - try to find color input or hex input
-            hex_input = page.locator(
-                'input[placeholder*="#" i], input[type="text"][value^="#"]'
-            ).first
-            if hex_input.count() > 0:
-                hex_input.fill(test_color_hex)
-                page.wait_for_timeout(200)
-                print(f"   [OK] Set color hex: {test_color_hex}")
-            else:
-                print("   [WARN] Hex color input not found")
-
-            # Fill notes (optional)
-            notes_textarea = page.locator("textarea").first
-            if notes_textarea.count() > 0:
-                notes_textarea.fill(test_notes)
-                page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/paints_03_create_form_filled.png")
+            take_screenshot(page, "paints_03_create_form_filled", "Create form filled")
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
@@ -135,21 +111,22 @@ def test_paints_crud():
             # ========================================
             print("\n4. Verifying paint appears in table...")
             page.wait_for_timeout(500)
-            paint_row = page.locator(f'tr:has-text("{test_paint_name}")')
-            expect(paint_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Paint '{test_paint_name}' found in table")
-            page.screenshot(path="/tmp/paints_04_in_table.png")
+
+            # Search and verify the new paint
+            search_and_verify(page, test_paint_name, "paint")
+
+            clear_search(page)
+            take_screenshot(page, "paints_04_in_table", "Paint in table")
 
             # ========================================
             # STEP 5: Edit paint entry
             # ========================================
             print("\n5. Editing paint entry...")
-            edit_btn = paint_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
 
-            # Verify modal opened
-            assert modal.is_visible(), "Edit modal should be visible"
+            # Search to find the paint
+            search_table(page, test_paint_name)
+
+            modal = open_edit_modal(page, test_paint_name)
             print("   [OK] Edit modal opened")
 
             # Verify existing data loaded
@@ -157,149 +134,76 @@ def test_paints_crud():
             expect(name_input).to_have_value(test_paint_name)
             print("   [OK] Existing data loaded")
 
-            # Update name
-            name_input.fill(updated_paint_name)
-            page.wait_for_timeout(200)
+            # Update form fields
+            fill_text_input(page, label="Paint Name", value=updated_paint_name)
+            fill_text_input(page, label="Manufacturer", value=updated_manufacturer)
+            fill_color_picker(page, modal, updated_color_hex, label="Color (Hex)")
 
-            # Update manufacturer
-            manufacturer_input = page.locator('input[placeholder*="manufacturer" i]').first
-            manufacturer_input.fill(updated_manufacturer)
-            page.wait_for_timeout(200)
-
-            # Update color hex
-            hex_input = page.locator(
-                'input[placeholder*="#" i], input[type="text"][value^="#"]'
-            ).first
-            if hex_input.count() > 0:
-                hex_input.fill(updated_color_hex)
-                page.wait_for_timeout(200)
-                print(f"   [OK] Updated color hex: {updated_color_hex}")
-
-            # Update notes
-            notes_textarea = page.locator("textarea").first
-            if notes_textarea.count() > 0:
-                notes_textarea.fill(updated_notes)
-                page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/paints_05_edit_form_filled.png")
+            take_screenshot(page, "paints_05_edit_form_filled", "Edit form filled")
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
             print("   [OK] Paint updated successfully")
 
             # ========================================
-            # STEP 6: Verify updated data in table
+            # STEP 6: Test search functionality
             # ========================================
-            print("\n6. Verifying updated data in table...")
-            page.wait_for_timeout(500)
-            updated_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-            expect(updated_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated paint '{updated_paint_name}' found in table")
-            page.screenshot(path="/tmp/paints_06_updated_in_table.png")
+            print("\n6. Testing search functionality...")
+
+            # Search by paint name
+            clear_search(page)
+            search_and_verify(page, updated_paint_name, "paint")
+            print(f"   [OK] Search by name found: '{updated_paint_name}'")
+            take_screenshot(page, "paints_06a_search_by_name", "Search by name")
+
+            # Search by manufacturer
+            clear_search(page)
+            search_and_verify(page, updated_manufacturer, "paint")
+            print(f"   [OK] Search by manufacturer found: '{updated_manufacturer}'")
+            take_screenshot(page, "paints_06b_search_by_manufacturer", "Search by manufacturer")
 
             # ========================================
             # STEP 7: Test data persistence - reload page
             # ========================================
             print("\n7. Testing data persistence - reloading page...")
             page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
             # Navigate back to Paints tab
-            paints_tab = page.locator("text=Paints").first
-            paints_tab.click()
+            navigate_to_tab(page, BASE_URL, "miniatures", "Paints")
+
+            # Search and verify persistence
+            search_and_verify(page, updated_paint_name, "paint")
+            print("   [OK] Paint data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(page, "paints_07_persisted", "Data persisted after reload")
+
+            # ========================================
+            # STEP 8: Delete paint entry
+            # ========================================
+            print(f"\n8. Deleting paint '{updated_paint_name}'...")
+
+            search_table(page, updated_paint_name)
+            delete_row(page, updated_paint_name)
+            print("   [OK] Deletion confirmed")
+
+            # ========================================
+            # STEP 9: Verify deletion
+            # ========================================
+            print("\n9. Verifying paint deletion...")
             page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_paint_name)
 
-            # Verify data still exists
-            persisted_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-            expect(persisted_row).to_be_visible(timeout=5000)
-            print("   [OK] Data persisted after page reload")
+            verify_row_not_exists(page, updated_paint_name, "paint")
 
-            # ========================================
-            # STEP 8: Search functionality
-            # ========================================
-            print("\n8. Testing search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                # Search by name
-                search_input.fill(updated_paint_name)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by name found: '{updated_paint_name}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-
-                # Search by manufacturer
-                search_input.fill(updated_manufacturer)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-                expect(search_row).to_be_visible()
-                print("   [OK] Search by manufacturer found entry")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
-
-            # ========================================
-            # STEP 9: Delete paint entry
-            # ========================================
-            print(f"\n9. Deleting paint '{updated_paint_name}'...")
-            delete_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-            delete_btn = delete_row.locator('button[aria-label*="Delete" i]').first
-            delete_btn.click()
-            page.wait_for_timeout(500)
-
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Deletion confirmed")
-
-            # ========================================
-            # STEP 10: Verify deletion
-            # ========================================
-            print("\n10. Verifying paint deletion...")
-            page.wait_for_timeout(500)
-            deleted_row = page.locator(f'tr:has-text("{updated_paint_name}")')
-
-            # Entry should no longer exist
-            expect(deleted_row).not_to_be_visible()
-            print(f"   [OK] Paint '{updated_paint_name}' successfully deleted")
-            page.screenshot(path="/tmp/paints_10_after_deletion.png")
-
-            # ========================================
-            # STEP 11: Verify deletion persists
-            # ========================================
-            print("\n11. Verifying deletion persists after reload...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Navigate back to Paints tab
-            paints_tab = page.locator("text=Paints").first
-            paints_tab.click()
-            page.wait_for_timeout(500)
-
-            # Verify entry is still gone
-            final_check = page.locator(f'tr:has-text("{updated_paint_name}")')
-            expect(final_check).not_to_be_visible()
-            print("   [OK] Deletion persisted after reload")
+            clear_search(page)
+            take_screenshot(page, "paints_09_after_deletion", "After deletion")
 
             # ========================================
             # TEST SUMMARY
@@ -308,35 +212,30 @@ def test_paints_crud():
             print("=== TEST COMPLETED SUCCESSFULLY ===")
             print("=" * 60)
             print("\nTests performed:")
-            print("  [PASS] Page navigation to Paints tab")
-            print("  [PASS] Form validation (empty form)")
-            print("  [PASS] Create paint with color and manufacturer")
+            print("  [PASS] Navigate to Paints tab")
+            print("  [PASS] Validation (empty form)")
+            print("  [PASS] Create paint with all fields")
             print("  [PASS] Verify creation in table")
             print("  [PASS] Edit paint")
-            print("  [PASS] Update paint data")
-            print("  [PASS] Data persistence after reload")
             print("  [PASS] Search by name")
             print("  [PASS] Search by manufacturer")
+            print("  [PASS] Data persistence after reload")
             print("  [PASS] Delete paint")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 12):
-                if i != 7 and i != 8 and i != 9 and i != 11:  # Skip steps without screenshots
-                    print(f"  - paints_{i:02d}_*.png")
+            print("\nScreenshots saved to /tmp/test_paints_*.png")
 
             return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/paints_error_assertion.png")
+            take_screenshot(page, "paints_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/paints_error.png")
+            take_screenshot(page, "paints_error", "Error occurred")
             import traceback
 
             traceback.print_exc()

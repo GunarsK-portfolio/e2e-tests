@@ -6,13 +6,21 @@ Tests: Dashboard layout, navigation cards, routing to all pages
 
 import sys
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import click_dashboard_card_button, find_dashboard_card, take_screenshot
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
+
+
+def navigate_to_dashboard(page):
+    """Navigate to dashboard (local helper for this test)"""
+    page.goto(f"{BASE_URL}/dashboard")
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(500)
 
 
 def test_dashboard_navigation():
@@ -33,9 +41,8 @@ def test_dashboard_navigation():
             # STEP 1: Navigate to Dashboard
             # ========================================
             print("1. Navigating to Dashboard...")
-            page.goto(f"{BASE_URL}/dashboard")
-            page.wait_for_load_state("networkidle")
-            page.screenshot(path="/tmp/dashboard_01_page.png")
+            navigate_to_dashboard(page)
+            take_screenshot(page, "dashboard_01_page", "Dashboard page loaded")
             print("   [OK] Dashboard page loaded")
 
             # ========================================
@@ -45,19 +52,15 @@ def test_dashboard_navigation():
 
             # Check for page title
             page_title = page.locator("text=Content Management").first
-            if page_title.count() > 0:
-                print("   [OK] Dashboard title 'Content Management' found")
-            else:
-                print("   [WARN] Dashboard title not found")
+            expect(page_title).to_be_visible()
+            print("   [OK] Dashboard title 'Content Management' found")
 
-            # Check for navigation cards - Dashboard has 6 cards in n-grid
+            # Check for navigation cards
             cards = page.locator(".n-card")
-            if cards.count() >= 6:
-                print(f"   [OK] Found {cards.count()} navigation cards")
-            else:
-                print(f"   [WARN] Expected at least 6 cards, found {cards.count()}")
+            expect(cards).to_have_count(6)
+            print(f"   [OK] Found {cards.count()} navigation cards")
 
-            page.screenshot(path="/tmp/dashboard_02_structure.png")
+            take_screenshot(page, "dashboard_02_structure", "Dashboard structure verified")
 
             # ========================================
             # STEP 3-8: Test navigation to each page
@@ -80,53 +83,23 @@ def test_dashboard_navigation():
                 print(f"\n{step_num}. Testing navigation to {nav_test['name']}...")
 
                 # Return to dashboard first
-                page.goto(f"{BASE_URL}/dashboard")
-                page.wait_for_load_state("networkidle")
-                page.wait_for_timeout(500)
+                navigate_to_dashboard(page)
 
-                # Find the card with this title, then find the button within it
-                card_title = page.locator(f'h3.card-title:has-text("{nav_test["name"]}")').first
+                # Verify card exists
+                card = find_dashboard_card(page, nav_test["name"])
+                expect(card).to_be_visible()
 
-                if card_title.count() > 0:
-                    # Find the card containing this title
-                    card = page.locator(
-                        f'.n-card:has(h3.card-title:has-text("{nav_test["name"]}"))'
-                    ).first
+                # Click the navigation button in the card
+                click_dashboard_card_button(page, nav_test["name"], nav_test["button_text"])
 
-                    if card.count() > 0:
-                        # Find the button within this specific card
-                        nav_button = card.locator(
-                            f'button:has-text("{nav_test["button_text"]}")'
-                        ).first
+                # Verify navigation occurred
+                expect(page).to_have_url(f"{BASE_URL}{nav_test['url']}")
+                print(f"   [OK] Navigated to {nav_test['name']}: {page.url}")
 
-                        if nav_button.count() > 0:
-                            nav_button.click()
-                            page.wait_for_load_state("networkidle")
-                            page.wait_for_timeout(500)
-
-                            # Verify navigation occurred (check if URL contains the expected path)
-                            if nav_test["url"] in page.url:
-                                print(f"   [OK] Navigated to {nav_test['name']}: {page.url}")
-                                screenshot_name = (
-                                    f"dashboard_{step_num:02d}_"
-                                    f"{nav_test['name'].lower().replace(' ', '_')}.png"
-                                )
-                                page.screenshot(path=f"/tmp/{screenshot_name}")
-                            else:
-                                expected_url = nav_test["url"]
-                                actual_url = page.url
-                                print(
-                                    f"   [FAIL] Expected URL to contain "
-                                    f"'{expected_url}', got: {actual_url}"
-                                )
-                        else:
-                            button_text = nav_test["button_text"]
-                            nav_name = nav_test["name"]
-                            print(f"   [WARN] Button '{button_text}' " f"not found for {nav_name}")
-                    else:
-                        print(f"   [WARN] Card not found for {nav_test['name']}")
-                else:
-                    print(f"   [WARN] Card title '{nav_test['name']}' not found")
+                screenshot_name = (
+                    f"dashboard_{step_num:02d}_{nav_test['name'].lower().replace(' ', '_')}"
+                )
+                take_screenshot(page, screenshot_name, f"Navigated to {nav_test['name']}")
 
                 step_num += 1
 
@@ -134,16 +107,12 @@ def test_dashboard_navigation():
             # STEP 9: Return to Dashboard and verify
             # ========================================
             print(f"\n{step_num}. Returning to Dashboard...")
-            page.goto(f"{BASE_URL}/dashboard")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
+            navigate_to_dashboard(page)
 
-            # Verify we're on dashboard (URL contains /dashboard)
-            if "/dashboard" in page.url:
-                print(f"   [OK] Successfully returned to Dashboard: {page.url}")
-            else:
-                print(f"   [WARN] Not on dashboard, current URL: {page.url}")
-            page.screenshot(path="/tmp/dashboard_09_final.png")
+            # Verify we're on dashboard
+            expect(page).to_have_url(f"{BASE_URL}/dashboard")
+            print(f"   [OK] Successfully returned to Dashboard: {page.url}")
+            take_screenshot(page, "dashboard_09_final", "Returned to Dashboard")
 
             # ========================================
             # STEP 10: Test direct URL access to root
@@ -154,10 +123,8 @@ def test_dashboard_navigation():
             page.wait_for_timeout(500)
 
             # Root should redirect to dashboard
-            if "dashboard" in page.url:
-                print("   [OK] Root URL redirects to Dashboard")
-            else:
-                print(f"   [WARN] Root URL did not redirect to Dashboard: {page.url}")
+            expect(page).to_have_url(f"{BASE_URL}/dashboard")
+            print("   [OK] Root URL redirects to Dashboard")
 
             # ========================================
             # TEST SUMMARY
@@ -176,29 +143,24 @@ def test_dashboard_navigation():
             print("  [PASS] Navigation to Miniatures")
             print("  [PASS] Return to Dashboard")
             print("  [PASS] Root URL redirect")
-            print("\nScreenshots saved to /tmp/:")
-            print("  - dashboard_01_page.png")
-            print("  - dashboard_02_structure.png")
-            for i, nav in enumerate(navigation_tests, start=3):
-                print(f"  - dashboard_{i:02d}_{nav['name'].lower().replace(' ', '_')}.png")
-            print("  - dashboard_09_final.png")
+            print("\nScreenshots saved to /tmp/test_dashboard_*.png")
+
+            return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/dashboard_error_assertion.png")
+            take_screenshot(page, "dashboard_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/dashboard_error.png")
+            take_screenshot(page, "dashboard_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
             return False
-        else:
-            return True
         finally:
             context.close()
             browser.close()

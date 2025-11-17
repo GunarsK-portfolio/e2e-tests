@@ -44,7 +44,10 @@ task test:profile                 # Profile management
 task test:skills                  # Skills CRUD
 task test:experience              # Work Experience CRUD
 task test:certifications          # Certifications CRUD
-task test:miniatures              # Miniatures CRUD
+task test:portfolio-projects      # Portfolio Projects CRUD
+task test:miniatures:themes       # Miniatures Themes CRUD
+task test:miniatures:paints       # Miniatures Paints CRUD
+task test:miniatures:projects     # Miniatures Projects CRUD
 ```
 
 ### Code Quality
@@ -91,7 +94,7 @@ task list                         # List all test suites
   - Display order management
   - Data persistence testing
 
-- **Certifications** (12 steps):
+- **Certifications** (11 steps):
   - Full CRUD with date validation
   - Credential ID and URL management
   - Status calculation (Valid/Expired/No Expiry)
@@ -99,12 +102,35 @@ task list                         # List all test suites
   - Multi-field search
   - Data persistence testing
 
-- **Portfolio Projects** (12 steps):
+- **Portfolio Projects** (13 steps):
   - Full CRUD operations
-  - Category selection
+  - Category selection and ongoing project toggle
   - GitHub and Live Demo URL validation
-  - Short and detailed descriptions
+  - Timeline management (start/end dates)
   - Search functionality
+  - Data persistence testing
+
+- **Miniatures - Themes** (9 steps):
+  - Full CRUD operations
+  - Cover image upload and removal
+  - Display order management
+  - Search by name and description
+  - Data persistence testing
+
+- **Miniatures - Paints** (9 steps):
+  - Full CRUD operations
+  - Color picker for hex values
+  - Paint type and manufacturer management
+  - Search by name and manufacturer
+  - Data persistence testing
+
+- **Miniatures - Projects** (9 steps):
+  - Full CRUD operations
+  - Theme association and project details
+  - Multiple image uploads (up to 3)
+  - Scale, manufacturer, difficulty tracking
+  - Time spent and completion date management
+  - Search by title and manufacturer
   - Data persistence testing
 
 - **Authentication Flow** (11 steps):
@@ -228,7 +254,7 @@ python run_all_tests.py
 This executes all tests in optimal order:
 1. Authentication Flow (validates login/logout)
 2. Dashboard Navigation (validates routing)
-3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects)
+3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects, Miniatures)
 
 ### Run Individual Tests
 
@@ -245,6 +271,11 @@ python e2e/skills/test_skills_crud.py
 python e2e/experience/test_experience_crud.py
 python e2e/certifications/test_certifications_crud.py
 python e2e/portfolio-projects/test_portfolio_projects_crud.py
+
+# Miniatures tests
+python e2e/miniatures/test_themes_crud.py
+python e2e/miniatures/test_paints_crud.py
+python e2e/miniatures/test_projects_crud.py
 ```
 
 ## Test Statistics
@@ -255,10 +286,20 @@ python e2e/portfolio-projects/test_portfolio_projects_crud.py
 | Dashboard Navigation | 10 | Page navigation, routing, layout verification |
 | Profile Management | 14 | CRUD, avatar upload, resume upload, file deletion |
 | Work Experience CRUD | 11 | CRUD, date handling, search |
-| Skills CRUD | 13 | Dual-tab CRUD, skill types, associations |
-| Certifications CRUD | 12 | CRUD, date validation, credential URLs, status |
-| Portfolio Projects CRUD | 12 | CRUD, URL validation, categories |
-| **TOTAL** | **83 steps** | **7 comprehensive test suites** |
+| Skills CRUD | 19 | Dual-tab CRUD, skill types, associations |
+| Certifications CRUD | 11 | CRUD, date validation, credential URLs, status |
+| Portfolio Projects CRUD | 13 | CRUD, URL validation, categories, ongoing toggle |
+| Miniatures Themes CRUD | 9 | CRUD, image upload/removal, search |
+| Miniatures Paints CRUD | 9 | CRUD, color picker, manufacturer search |
+| Miniatures Projects CRUD | 9 | CRUD, multi-image upload, theme association |
+| **TOTAL** | **116 steps** | **10 comprehensive test suites** |
+
+## Test Assets
+
+Test files are located in `test-files/`:
+- `test_image.jpg` - Used for theme cover images and project image uploads
+- `test-avatar.jpg` - Used for profile avatar upload testing
+- `test-resume.pdf` - Used for profile resume upload testing
 
 ## Notes
 
@@ -267,4 +308,4 @@ python e2e/portfolio-projects/test_portfolio_projects_crud.py
 - All tests are independent and can run in any order
 - Test data uses timestamps for uniqueness
 - Profile test restores original data after execution
-- Miniatures test deferred for future enhancement (complex 3-tab structure)
+- Helper-based pattern eliminates raw HTML selectors for better maintainability

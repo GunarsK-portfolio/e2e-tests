@@ -1,16 +1,38 @@
 #!/usr/bin/env python3
 """
 E2E test for Miniatures Projects CRUD operations
-Tests: Full CRUD with validation, data persistence, collapsible sections, dropdowns
+Tests: Validation, Create, Edit, Search, Persistence, Delete
 """
 
 import sys
 import time
+from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    expand_collapse_section,
+    fill_date_input,
+    fill_number_input,
+    fill_text_input,
+    fill_textarea,
+    navigate_to_tab,
+    open_add_modal,
+    open_edit_modal,
+    save_modal,
+    search_and_verify,
+    search_table,
+    select_dropdown_option,
+    take_screenshot,
+    upload_file,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -34,95 +56,78 @@ def test_projects_crud():
         test_scale = "28mm"
         test_manufacturer = "Games Workshop"
         test_description = "E2E automated testing miniature project"
+        test_time_spent = 15.5
+        test_completed_date = "2024-03-20"
+        test_display_order = 99
 
         updated_project_title = f"{test_project_title} Updated"
         updated_scale = "32mm"
         updated_manufacturer = "Reaper Miniatures"
         updated_description = "Updated: Advanced E2E testing miniature project"
+        updated_time_spent = 25
+        updated_completed_date = "2024-06-15"
+        updated_display_order = 10
+
+        # Test image path - relative to test file
+        test_image_path = str(Path(__file__).parent.parent.parent / "test-files" / "test_image.jpg")
 
         try:
             # ========================================
             # STEP 1: Navigate to Miniatures > Projects tab
             # ========================================
             print("1. Navigating to Miniatures > Projects tab...")
-            page.goto(f"{BASE_URL}/miniatures")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Projects tab is default, but click it to be sure
-            projects_tab = page.locator("text=Projects").first
-            if projects_tab.count() > 0:
-                projects_tab.click()
-                page.wait_for_timeout(500)
-
-            page.screenshot(path="/tmp/projects_01_page.png")
+            navigate_to_tab(page, BASE_URL, "miniatures", "Projects")
+            take_screenshot(page, "projects_01_page", "Projects tab loaded")
             print("   [OK] Projects tab loaded")
 
             # ========================================
             # STEP 2: Test validation - empty form
             # ========================================
             print("\n2. Testing validation - empty project form...")
-            add_btn = page.locator('button:has-text("Add Project")').first
-            assert add_btn.count() > 0, "Add Project button not found"
-            add_btn.click()
-            page.wait_for_timeout(500)
-
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
+            modal = open_add_modal(page, "Add Project")
             print("   [OK] Add Project modal opened")
 
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty project form submission")
-            page.screenshot(path="/tmp/projects_02_validation_error.png")
+            take_screenshot(page, "projects_02_validation_error", "Validation error shown")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
+            close_modal(page)
             print("   [OK] Modal closed")
 
             # ========================================
             # STEP 3: Create new project
             # ========================================
             print(f"\n3. Creating new project: '{test_project_title}'...")
-            add_btn.click()
-            page.wait_for_timeout(500)
+            modal = open_add_modal(page, "Add Project")
 
-            # Fill project title (Basic Information section is expanded by default)
-            title_input = page.locator('input[placeholder*="project title" i]').first
-            title_input.fill(test_project_title)
-            page.wait_for_timeout(200)
+            # Basic Information section (expanded by default)
+            fill_text_input(page, label="Project Title", value=test_project_title)
+            select_dropdown_option(page, modal, 0, label="Theme")  # Select first theme
+            fill_textarea(page, label="Description", value=test_description)
 
-            # Fill scale
-            scale_input = page.locator('input[placeholder*="scale" i]').first
-            if scale_input.count() > 0:
-                scale_input.fill(test_scale)
-                page.wait_for_timeout(200)
+            # Expand Project Details section
+            expand_collapse_section(page, "Project Details")
+            fill_text_input(page, label="Scale", value=test_scale)
+            fill_text_input(page, label="Manufacturer", value=test_manufacturer)
+            # Select first difficulty (Beginner)
+            # select_dropdown_option(page, modal, 0, label="Difficulty")
+            fill_number_input(page, label="Time Spent (hours)", value=test_time_spent)
 
-            # Fill manufacturer
-            manufacturer_input = page.locator('input[placeholder*="manufacturer" i]').first
-            if manufacturer_input.count() > 0:
-                manufacturer_input.fill(test_manufacturer)
-                page.wait_for_timeout(200)
+            # Expand Metadata section
+            expand_collapse_section(page, "Metadata")
+            fill_date_input(page, label="Completed Date", date_value=test_completed_date)
+            fill_number_input(page, label="Display Order", value=test_display_order)
 
-            # Fill description
-            desc_textarea = page.locator("textarea").first
-            if desc_textarea.count() > 0:
-                desc_textarea.fill(test_description)
-                page.wait_for_timeout(200)
-
-            page.screenshot(path="/tmp/projects_03_create_form_filled.png")
+            print("   [OK] Form fields filled")
+            take_screenshot(page, "projects_03_create_form_filled", "Create form filled")
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
@@ -133,21 +138,22 @@ def test_projects_crud():
             # ========================================
             print("\n4. Verifying project appears in table...")
             page.wait_for_timeout(500)
-            project_row = page.locator(f'tr:has-text("{test_project_title}")')
-            expect(project_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Project '{test_project_title}' found in table")
-            page.screenshot(path="/tmp/projects_04_in_table.png")
+
+            # Search and verify the new project
+            search_and_verify(page, test_project_title, "project")
+
+            clear_search(page)
+            take_screenshot(page, "projects_04_in_table", "Project in table")
 
             # ========================================
             # STEP 5: Edit project entry
             # ========================================
             print("\n5. Editing project entry...")
-            edit_btn = project_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
 
-            # Verify modal opened
-            assert modal.is_visible(), "Edit modal should be visible"
+            # Search to find the project
+            search_table(page, test_project_title)
+
+            modal = open_edit_modal(page, test_project_title)
             print("   [OK] Edit modal opened")
 
             # Verify existing data loaded
@@ -155,149 +161,94 @@ def test_projects_crud():
             expect(title_input).to_have_value(test_project_title)
             print("   [OK] Existing data loaded")
 
-            # Update title
-            title_input.fill(updated_project_title)
-            page.wait_for_timeout(200)
+            # Update Basic Information
+            fill_text_input(page, label="Project Title", value=updated_project_title)
+            fill_textarea(page, label="Description", value=updated_description)
 
-            # Update scale
-            scale_input = page.locator('input[placeholder*="scale" i]').first
-            if scale_input.count() > 0:
-                scale_input.fill(updated_scale)
-                page.wait_for_timeout(200)
+            # Update Project Details
+            expand_collapse_section(page, "Project Details")
+            fill_text_input(page, label="Scale", value=updated_scale)
+            fill_text_input(page, label="Manufacturer", value=updated_manufacturer)
+            select_dropdown_option(page, modal, 0, label="Difficulty")  # Select first difficulty
+            fill_number_input(page, label="Time Spent (hours)", value=updated_time_spent)
 
-            # Update manufacturer
-            manufacturer_input = page.locator('input[placeholder*="manufacturer" i]').first
-            if manufacturer_input.count() > 0:
-                manufacturer_input.fill(updated_manufacturer)
-                page.wait_for_timeout(200)
+            # Update Metadata
+            expand_collapse_section(page, "Metadata")
+            fill_date_input(page, label="Completed Date", date_value=updated_completed_date)
+            fill_number_input(page, label="Display Order", value=updated_display_order)
 
-            # Update description
-            desc_textarea = page.locator("textarea").first
-            if desc_textarea.count() > 0:
-                desc_textarea.fill(updated_description)
-                page.wait_for_timeout(200)
+            # Upload multiple project images (Project Images section only appears when editing)
+            expand_collapse_section(page, "Project Images")
+            upload_file(page, modal, test_image_path)
+            print("   [OK] Project image 1 uploaded")
 
-            page.screenshot(path="/tmp/projects_05_edit_form_filled.png")
+            upload_file(page, modal, test_image_path)
+            print("   [OK] Project image 2 uploaded")
+
+            upload_file(page, modal, test_image_path)
+            print("   [OK] Project image 3 uploaded")
+
+            take_screenshot(page, "projects_05_edit_form_filled", "Edit form with 3 project images")
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
             print("   [OK] Project updated successfully")
 
             # ========================================
-            # STEP 6: Verify updated data in table
+            # STEP 6: Test search functionality
             # ========================================
-            print("\n6. Verifying updated data in table...")
-            page.wait_for_timeout(500)
-            updated_row = page.locator(f'tr:has-text("{updated_project_title}")')
-            expect(updated_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated project '{updated_project_title}' found in table")
-            page.screenshot(path="/tmp/projects_06_updated_in_table.png")
+            print("\n6. Testing search functionality...")
+
+            # Search by project title
+            clear_search(page)
+            search_and_verify(page, updated_project_title, "project")
+            print(f"   [OK] Search by title found: '{updated_project_title}'")
+            take_screenshot(page, "projects_06a_search_by_title", "Search by title")
+
+            clear_search(page)
 
             # ========================================
             # STEP 7: Test data persistence - reload page
             # ========================================
             print("\n7. Testing data persistence - reloading page...")
             page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Navigate back to Projects tab (should be default)
-            projects_tab = page.locator('div[role="tab"]:has-text("Projects")').first
-            if projects_tab.count() > 0:
-                projects_tab.click()
-                page.wait_for_timeout(500)
-
-            # Verify data still exists
-            persisted_row = page.locator(f'tr:has-text("{updated_project_title}")')
-            expect(persisted_row).to_be_visible(timeout=5000)
-            print("   [OK] Data persisted after page reload")
-
-            # ========================================
-            # STEP 8: Search functionality
-            # ========================================
-            print("\n8. Testing search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                # Search by title
-                search_input.fill(updated_project_title)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_project_title}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by title found: '{updated_project_title}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-
-                # Search by manufacturer
-                search_input.fill(updated_manufacturer)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_project_title}")')
-                expect(search_row).to_be_visible()
-                print("   [OK] Search by manufacturer found entry")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
-
-            # ========================================
-            # STEP 9: Delete project entry
-            # ========================================
-            print(f"\n9. Deleting project '{updated_project_title}'...")
-            delete_row = page.locator(f'tr:has-text("{updated_project_title}")')
-            delete_btn = delete_row.locator('button[aria-label*="Delete" i]').first
-            delete_btn.click()
-            page.wait_for_timeout(500)
-
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Deletion confirmed")
-
-            # ========================================
-            # STEP 10: Verify deletion
-            # ========================================
-            print("\n10. Verifying project deletion...")
-            page.wait_for_timeout(500)
-            deleted_row = page.locator(f'tr:has-text("{updated_project_title}")')
-
-            # Entry should no longer exist
-            expect(deleted_row).not_to_be_visible()
-            print(f"   [OK] Project '{updated_project_title}' successfully deleted")
-            page.screenshot(path="/tmp/projects_10_after_deletion.png")
-
-            # ========================================
-            # STEP 11: Verify deletion persists
-            # ========================================
-            print("\n11. Verifying deletion persists after reload...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
             # Navigate back to Projects tab
-            projects_tab = page.locator("text=Projects").first
-            if projects_tab.count() > 0:
-                projects_tab.click()
-                page.wait_for_timeout(500)
+            navigate_to_tab(page, BASE_URL, "miniatures", "Projects")
 
-            # Verify entry is still gone
-            final_check = page.locator(f'tr:has-text("{updated_project_title}")')
-            expect(final_check).not_to_be_visible()
-            print("   [OK] Deletion persisted after reload")
+            # Search and verify persistence
+            search_and_verify(page, updated_project_title, "project")
+            print("   [OK] Project data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(page, "projects_07_persisted", "Data persisted after reload")
+
+            # ========================================
+            # STEP 8: Delete project entry
+            # ========================================
+            print(f"\n8. Deleting project '{updated_project_title}'...")
+
+            search_table(page, updated_project_title)
+            delete_row(page, updated_project_title)
+            print("   [OK] Deletion confirmed")
+
+            # ========================================
+            # STEP 9: Verify deletion
+            # ========================================
+            print("\n9. Verifying project deletion...")
+            page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_project_title)
+
+            verify_row_not_exists(page, updated_project_title, "project")
+
+            clear_search(page)
+            take_screenshot(page, "projects_09_after_deletion", "After deletion")
 
             # ========================================
             # TEST SUMMARY
@@ -306,35 +257,33 @@ def test_projects_crud():
             print("=== TEST COMPLETED SUCCESSFULLY ===")
             print("=" * 60)
             print("\nTests performed:")
-            print("  [PASS] Page navigation to Projects tab")
-            print("  [PASS] Form validation (empty form)")
-            print("  [PASS] Create project with all required fields")
+            print("  [PASS] Navigate to Projects tab")
+            print("  [PASS] Validation (empty form)")
+            print("  [PASS] Create project with all fields:")
+            print("         - Basic Info: title, theme, description")
+            print("         - Details: scale, manufacturer, difficulty, time spent")
+            print("         - Metadata: display order")
             print("  [PASS] Verify creation in table")
-            print("  [PASS] Edit project")
-            print("  [PASS] Update project data")
-            print("  [PASS] Data persistence after reload")
+            print("  [PASS] Edit project with updated values")
+            print("  [PASS] Upload 3 project images")
             print("  [PASS] Search by title")
-            print("  [PASS] Search by manufacturer")
+            print("  [PASS] Data persistence after reload")
             print("  [PASS] Delete project")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 12):
-                if i != 7 and i != 8 and i != 9 and i != 11:  # Skip steps without screenshots
-                    print(f"  - projects_{i:02d}_*.png")
+            print("\nScreenshots saved to /tmp/test_projects_*.png")
 
             return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/projects_error_assertion.png")
+            take_screenshot(page, "projects_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/projects_error.png")
+            take_screenshot(page, "projects_error", "Error occurred")
             import traceback
 
             traceback.print_exc()

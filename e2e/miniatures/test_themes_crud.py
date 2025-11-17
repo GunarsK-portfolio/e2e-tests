@@ -1,16 +1,37 @@
 #!/usr/bin/env python3
 """
 E2E test for Miniatures Themes CRUD operations
-Tests: Full CRUD with validation, data persistence, image upload
+Tests: Validation, Create, Edit, Search, Persistence, Delete
 """
 
 import sys
 import time
+from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
 from e2e.common.config import get_config
+from e2e.common.helpers import (
+    clear_search,
+    close_modal,
+    delete_row,
+    fill_number_input,
+    fill_text_input,
+    fill_textarea,
+    navigate_to_tab,
+    open_add_modal,
+    open_edit_modal,
+    remove_uploaded_file,
+    save_modal,
+    search_and_verify,
+    search_table,
+    take_screenshot,
+    upload_file,
+    verify_file_uploaded,
+    verify_row_not_exists,
+    wait_for_page_load,
+)
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -35,79 +56,59 @@ def test_themes_crud():
         updated_theme_name = f"{test_theme_name} Updated"
         updated_theme_desc = "Updated: Advanced E2E testing theme"
 
+        # Test image path - relative to test file
+        test_image_path = str(Path(__file__).parent.parent.parent / "test-files" / "test_image.jpg")
+
         try:
             # ========================================
-            # STEP 1: Navigate to Miniatures Themes tab
+            # STEP 1: Navigate to Miniatures > Themes tab
             # ========================================
             print("1. Navigating to Miniatures > Themes tab...")
-            page.goto(f"{BASE_URL}/miniatures")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Click Themes tab
-            themes_tab = page.locator("text=Themes").first
-            themes_tab.click()
-            page.wait_for_timeout(500)
-            page.screenshot(path="/tmp/themes_01_page.png")
+            navigate_to_tab(page, BASE_URL, "miniatures", "Themes")
+            take_screenshot(page, "themes_01_page", "Themes tab loaded")
             print("   [OK] Themes tab loaded")
 
             # ========================================
             # STEP 2: Test validation - empty form
             # ========================================
             print("\n2. Testing validation - empty theme form...")
-            add_btn = page.locator('button:has-text("Add Theme")').first
-            assert add_btn.count() > 0, "Add Theme button not found"
-            add_btn.click()
-            page.wait_for_timeout(500)
-
-            modal = page.locator('[role="dialog"]')
-            assert modal.count() > 0, "Modal not opened"
+            modal = open_add_modal(page, "Add Theme")
             print("   [OK] Add Theme modal opened")
 
             # Try to save without filling required fields
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(500)
+            save_modal(page)
 
             # Modal should remain open due to validation
             assert modal.is_visible(), "Modal should remain open on validation error"
             print("   [OK] Validation prevents empty theme form submission")
-            page.screenshot(path="/tmp/themes_02_validation_error.png")
+            take_screenshot(page, "themes_02_validation_error", "Validation error shown")
 
             # Close modal
-            cancel_btn = page.locator('button:has-text("Cancel")').first
-            cancel_btn.click()
-            page.wait_for_timeout(300)
+            close_modal(page)
             print("   [OK] Modal closed")
 
             # ========================================
             # STEP 3: Create new theme
             # ========================================
             print(f"\n3. Creating new theme: '{test_theme_name}'...")
-            add_btn.click()
-            page.wait_for_timeout(500)
+            modal = open_add_modal(page, "Add Theme")
 
-            # Fill name
-            name_input = page.locator('input[placeholder*="name" i]').first
-            name_input.fill(test_theme_name)
-            page.wait_for_timeout(200)
+            # Fill form fields
+            fill_text_input(page, label="Theme Name", value=test_theme_name)
+            fill_textarea(page, label="Description", value=test_theme_desc)
 
-            # Fill description
-            desc_textarea = page.locator("textarea").first
-            desc_textarea.fill(test_theme_desc)
-            page.wait_for_timeout(200)
+            # Upload cover image
+            upload_file(page, modal, test_image_path)
+            assert verify_file_uploaded(page, modal), "Cover image should be uploaded"
+            print("   [OK] Cover image uploaded")
 
-            # Set display order
-            order_input = page.locator('input[placeholder*="Order" i], .n-input-number input').last
-            order_input.fill("99")
-            page.wait_for_timeout(200)
+            fill_number_input(page, label="Display Order", value=99)
+            print("   [OK] Form fields filled")
 
-            page.screenshot(path="/tmp/themes_03_create_form_filled.png")
+            take_screenshot(page, "themes_03_create_form_filled", "Create form with image")
 
             # Save
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Create")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful save"
@@ -118,144 +119,109 @@ def test_themes_crud():
             # ========================================
             print("\n4. Verifying theme appears in table...")
             page.wait_for_timeout(500)
-            theme_row = page.locator(f'tr:has-text("{test_theme_name}")')
-            expect(theme_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Theme '{test_theme_name}' found in table")
-            page.screenshot(path="/tmp/themes_04_in_table.png")
+
+            # Search and verify the new theme
+            search_and_verify(page, test_theme_name, "theme")
+
+            clear_search(page)
+            take_screenshot(page, "themes_04_in_table", "Theme in table")
 
             # ========================================
             # STEP 5: Edit theme entry
             # ========================================
             print("\n5. Editing theme entry...")
-            edit_btn = theme_row.locator('button[aria-label*="Edit" i]').first
-            edit_btn.click()
-            page.wait_for_timeout(500)
 
-            # Verify modal opened
-            assert modal.is_visible(), "Edit modal should be visible"
+            # Search to find the theme
+            search_table(page, test_theme_name)
+
+            modal = open_edit_modal(page, test_theme_name)
             print("   [OK] Edit modal opened")
 
             # Verify existing data loaded
-            name_input = page.locator('input[placeholder*="name" i]').first
+            name_input = page.locator('input[placeholder*="Enter theme name" i]').first
             expect(name_input).to_have_value(test_theme_name)
-            print("   [OK] Existing data loaded")
+            assert verify_file_uploaded(page, modal), "Cover image should still be present"
+            print("   [OK] Existing data loaded with cover image")
 
-            # Update name
-            name_input.fill(updated_theme_name)
-            page.wait_for_timeout(200)
+            # Update form fields
+            fill_text_input(page, label="Theme Name", value=updated_theme_name)
+            fill_textarea(page, label="Description", value=updated_theme_desc)
 
-            # Update description
-            desc_textarea = page.locator("textarea").first
-            desc_textarea.fill(updated_theme_desc)
-            page.wait_for_timeout(200)
+            # Test image removal
+            assert remove_uploaded_file(page, modal, "Remove Image"), "Should remove cover image"
+            assert not verify_file_uploaded(page, modal), "Cover image should be removed"
+            print("   [OK] Cover image removed")
 
-            page.screenshot(path="/tmp/themes_05_edit_form_filled.png")
+            # Re-upload the image
+            upload_file(page, modal, test_image_path)
+            assert verify_file_uploaded(page, modal), "Cover image should be re-uploaded"
+            print("   [OK] Cover image re-uploaded")
+
+            take_screenshot(page, "themes_05_edit_form_filled", "Edit form with re-uploaded image")
 
             # Save changes
-            save_btn = page.locator('button:has-text("Save"), button:has-text("Update")').first
-            save_btn.click()
-            page.wait_for_timeout(1000)
+            save_modal(page)
 
             # Verify modal closed
             assert not modal.is_visible(), "Modal should close after successful update"
             print("   [OK] Theme updated successfully")
 
             # ========================================
-            # STEP 6: Verify updated data in table
+            # STEP 6: Test search functionality
             # ========================================
-            print("\n6. Verifying updated data in table...")
-            page.wait_for_timeout(500)
-            updated_row = page.locator(f'tr:has-text("{updated_theme_name}")')
-            expect(updated_row).to_be_visible(timeout=5000)
-            print(f"   [OK] Updated theme '{updated_theme_name}' found in table")
-            page.screenshot(path="/tmp/themes_06_updated_in_table.png")
+            print("\n6. Testing search functionality...")
+
+            # Search by theme name
+            clear_search(page)
+            search_and_verify(page, updated_theme_name, "theme")
+            print(f"   [OK] Search by name found: '{updated_theme_name}'")
+            take_screenshot(page, "themes_06a_search_by_name", "Search by name")
+
+            # Search by description
+            clear_search(page)
+            search_and_verify(page, updated_theme_desc, "theme")
+            print("   [OK] Search by description found")
+            take_screenshot(page, "themes_06b_search_by_description", "Search by description")
 
             # ========================================
             # STEP 7: Test data persistence - reload page
             # ========================================
             print("\n7. Testing data persistence - reloading page...")
             page.reload()
-            page.wait_for_load_state("networkidle")
+            wait_for_page_load(page)
             page.wait_for_timeout(500)
 
             # Navigate back to Themes tab
-            themes_tab = page.locator("text=Themes").first
-            themes_tab.click()
+            navigate_to_tab(page, BASE_URL, "miniatures", "Themes")
+
+            # Search and verify persistence
+            search_and_verify(page, updated_theme_name, "theme")
+            print("   [OK] Theme data persisted after reload")
+
+            clear_search(page)
+            take_screenshot(page, "themes_07_persisted", "Data persisted after reload")
+
+            # ========================================
+            # STEP 8: Delete theme entry
+            # ========================================
+            print(f"\n8. Deleting theme '{updated_theme_name}'...")
+
+            search_table(page, updated_theme_name)
+            delete_row(page, updated_theme_name)
+            print("   [OK] Deletion confirmed")
+
+            # ========================================
+            # STEP 9: Verify deletion
+            # ========================================
+            print("\n9. Verifying theme deletion...")
             page.wait_for_timeout(500)
+            clear_search(page)
+            search_table(page, updated_theme_name)
 
-            # Verify data still exists
-            persisted_row = page.locator(f'tr:has-text("{updated_theme_name}")')
-            expect(persisted_row).to_be_visible(timeout=5000)
-            print("   [OK] Data persisted after page reload")
+            verify_row_not_exists(page, updated_theme_name, "theme")
 
-            # ========================================
-            # STEP 8: Search functionality
-            # ========================================
-            print("\n8. Testing search functionality...")
-            search_input = page.locator('input[placeholder*="Search" i]').first
-            if search_input.count() > 0:
-                # Search by name
-                search_input.fill(updated_theme_name)
-                page.wait_for_timeout(500)
-
-                search_row = page.locator(f'tr:has-text("{updated_theme_name}")')
-                expect(search_row).to_be_visible()
-                print(f"   [OK] Search by name found: '{updated_theme_name}'")
-
-                # Clear search
-                search_input.fill("")
-                page.wait_for_timeout(500)
-                print("   [OK] Search cleared")
-            else:
-                print("   [WARN] Search input not found")
-
-            # ========================================
-            # STEP 9: Delete theme entry
-            # ========================================
-            print(f"\n9. Deleting theme '{updated_theme_name}'...")
-            delete_row = page.locator(f'tr:has-text("{updated_theme_name}")')
-            delete_btn = delete_row.locator('button[aria-label*="Delete" i]').first
-            delete_btn.click()
-            page.wait_for_timeout(500)
-
-            # Confirm deletion
-            confirm_btn = page.locator(
-                'button:has-text("Confirm"), button:has-text("Delete"), button:has-text("Yes")'
-            ).first
-            if confirm_btn.count() > 0:
-                confirm_btn.click()
-                page.wait_for_timeout(1000)
-                print("   [OK] Deletion confirmed")
-
-            # ========================================
-            # STEP 10: Verify deletion
-            # ========================================
-            print("\n10. Verifying theme deletion...")
-            page.wait_for_timeout(500)
-            deleted_row = page.locator(f'tr:has-text("{updated_theme_name}")')
-
-            # Entry should no longer exist
-            expect(deleted_row).not_to_be_visible()
-            print(f"   [OK] Theme '{updated_theme_name}' successfully deleted")
-            page.screenshot(path="/tmp/themes_10_after_deletion.png")
-
-            # ========================================
-            # STEP 11: Verify deletion persists
-            # ========================================
-            print("\n11. Verifying deletion persists after reload...")
-            page.reload()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-
-            # Navigate back to Themes tab
-            themes_tab = page.locator("text=Themes").first
-            themes_tab.click()
-            page.wait_for_timeout(500)
-
-            # Verify entry is still gone
-            final_check = page.locator(f'tr:has-text("{updated_theme_name}")')
-            expect(final_check).not_to_be_visible()
-            print("   [OK] Deletion persisted after reload")
+            clear_search(page)
+            take_screenshot(page, "themes_09_after_deletion", "After deletion")
 
             # ========================================
             # TEST SUMMARY
@@ -264,34 +230,34 @@ def test_themes_crud():
             print("=== TEST COMPLETED SUCCESSFULLY ===")
             print("=" * 60)
             print("\nTests performed:")
-            print("  [PASS] Page navigation to Themes tab")
-            print("  [PASS] Form validation (empty form)")
-            print("  [PASS] Create theme with description and order")
+            print("  [PASS] Navigate to Themes tab")
+            print("  [PASS] Validation (empty form)")
+            print("  [PASS] Create theme with description, cover image, and order")
+            print("  [PASS] Upload cover image")
             print("  [PASS] Verify creation in table")
             print("  [PASS] Edit theme")
-            print("  [PASS] Update theme data")
-            print("  [PASS] Data persistence after reload")
+            print("  [PASS] Verify cover image persisted")
+            print("  [PASS] Remove cover image")
+            print("  [PASS] Re-upload cover image")
             print("  [PASS] Search by name")
+            print("  [PASS] Search by description")
+            print("  [PASS] Data persistence after reload")
             print("  [PASS] Delete theme")
             print("  [PASS] Verify deletion")
-            print("  [PASS] Deletion persistence")
-            print("\nScreenshots saved to /tmp/:")
-            for i in range(1, 12):
-                if i != 7 and i != 8 and i != 9 and i != 11:  # Skip steps without screenshots
-                    print(f"  - themes_{i:02d}_*.png")
+            print("\nScreenshots saved to /tmp/test_themes_*.png")
 
             return True
 
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
-            page.screenshot(path="/tmp/themes_error_assertion.png")
+            take_screenshot(page, "themes_error_assertion", "Assertion error")
             import traceback
 
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
-            page.screenshot(path="/tmp/themes_error.png")
+            take_screenshot(page, "themes_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
