@@ -99,7 +99,7 @@ def test_themes_crud():
 
             # Upload cover image
             upload_file(page, modal, test_image_path)
-            assert verify_file_uploaded(page, modal), "Cover image should be uploaded"
+            assert verify_file_uploaded(modal), "Cover image should be uploaded"
             print("   [OK] Cover image uploaded")
 
             fill_number_input(page, label="Display Order", value=99)
@@ -140,7 +140,7 @@ def test_themes_crud():
             # Verify existing data loaded
             name_input = page.locator('input[placeholder*="Enter theme name" i]').first
             expect(name_input).to_have_value(test_theme_name)
-            assert verify_file_uploaded(page, modal), "Cover image should still be present"
+            assert verify_file_uploaded(modal), "Cover image should still be present"
             print("   [OK] Existing data loaded with cover image")
 
             # Update form fields
@@ -149,12 +149,12 @@ def test_themes_crud():
 
             # Test image removal
             assert remove_uploaded_file(page, modal, "Remove Image"), "Should remove cover image"
-            assert not verify_file_uploaded(page, modal), "Cover image should be removed"
+            assert not verify_file_uploaded(modal), "Cover image should be removed"
             print("   [OK] Cover image removed")
 
             # Re-upload the image
             upload_file(page, modal, test_image_path)
-            assert verify_file_uploaded(page, modal), "Cover image should be re-uploaded"
+            assert verify_file_uploaded(modal), "Cover image should be re-uploaded"
             print("   [OK] Cover image re-uploaded")
 
             take_screenshot(page, "themes_05_edit_form_filled", "Edit form with re-uploaded image")
