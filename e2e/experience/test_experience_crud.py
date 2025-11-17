@@ -7,6 +7,7 @@ Tests: Full CRUD with validation, current position toggle, date handling, search
 import sys
 import time
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
@@ -48,17 +49,18 @@ def fill_month_date(page, label: str, value: str):
         value: Month value in format "YYYY-MM" (e.g., "2024-01")
     """
     form_item = page.locator(f'.n-form-item:has(.n-form-item-label:has-text("{label}"))').first
-    date_input = form_item.locator('input[placeholder="Select Month"]').first
+    date_input = form_item.locator('input[placeholder*="Select Month" i]').first
+    assert date_input.count() > 0, f"Month date input not found for label '{label}'"
     date_input.fill(value)
     page.wait_for_timeout(200)
 
 
-def toggle_current_position(page, enabled: bool = True):
+def toggle_current_position(page, *, enabled: bool = True):
     """Toggle the 'Currently working here' checkbox
 
     Args:
         page: Playwright page object
-        enabled: True to enable (currently working), False to disable
+        enabled: True to enable (currently working), False to disable (keyword-only)
     """
     # Find the checkbox by its text label
     checkbox = page.locator('.n-checkbox:has-text("Currently working here")').first
@@ -183,7 +185,6 @@ def test_experience_crud():
             # STEP 4: Verify experience appears in table
             # ========================================
             print("\n4. Verifying experience appears in table...")
-            page.wait_for_timeout(500)
 
             # Search and verify the new experience
             exp_row = search_and_verify(page, test_company, "work experience")
@@ -234,7 +235,6 @@ def test_experience_crud():
             # STEP 6: Verify updated experience in table
             # ========================================
             print("\n6. Verifying updated experience in table...")
-            page.wait_for_timeout(500)
 
             clear_search(page)
             updated_exp_row = search_and_verify(page, updated_company, "updated work experience")
@@ -381,14 +381,21 @@ def test_experience_crud():
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
+        except PlaywrightTimeout as e:
+            print(f"\n[TIMEOUT ERROR] {e}")
+            take_screenshot(page, "experience_error_timeout", "Timeout occurred")
+            import traceback
+
+            traceback.print_exc()
+            raise
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "experience_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
         finally:
             context.close()
             browser.close()

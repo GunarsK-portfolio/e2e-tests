@@ -49,7 +49,11 @@ def check_element_exists(page, selector, name=""):
 
 
 def fill_text_input(
-    page: Page, placeholder: str = None, value: str = None, label: str = None, wait_ms: int = 200
+    page: Page,
+    placeholder: str | None = None,
+    value: str | None = None,
+    label: str | None = None,
+    wait_ms: int = 200,
 ):
     """Fill a text input field by label (preferred) or placeholder (fallback)
 
@@ -76,9 +80,9 @@ def fill_text_input(
 
 def fill_text_input_exact(
     page: Page,
-    placeholder: str = None,
-    value: str = None,
-    label: str = None,
+    placeholder: str | None = None,
+    value: str | None = None,
+    label: str | None = None,
     exact: bool = True,
     wait_ms: int = 200,
 ):
@@ -110,7 +114,11 @@ def fill_text_input_exact(
 
 
 def fill_textarea(
-    page: Page, placeholder: str = None, value: str = None, label: str = None, wait_ms: int = 200
+    page: Page,
+    placeholder: str | None = None,
+    value: str | None = None,
+    label: str | None = None,
+    wait_ms: int = 200,
 ):
     """Fill a textarea field by label (preferred) or placeholder (fallback)
 
@@ -137,9 +145,9 @@ def fill_textarea(
 
 def fill_number_input(
     page: Page,
-    placeholder: str = None,
-    value: int | str = None,
-    label: str = None,
+    placeholder: str | None = None,
+    value: int | str | None = None,
+    label: str | None = None,
     wait_ms: int = 200,
 ):
     """Fill a number input field by label (preferred) or placeholder (fallback)
@@ -166,7 +174,11 @@ def fill_number_input(
 
 
 def fill_date_input(
-    page: Page, label: str = None, date_value: str = None, index: int = None, wait_ms: int = 200
+    page: Page,
+    label: str | None = None,
+    date_value: str | None = None,
+    index: int | None = None,
+    wait_ms: int = 200,
 ):
     """Fill a date input field by label or index
 
@@ -196,7 +208,7 @@ def fill_date_input(
 
 
 def select_dropdown_option(
-    page: Page, modal, option_index: int = 0, label: str = None, wait_ms: int = 300
+    page: Page, modal, option_index: int = 0, label: str | None = None, wait_ms: int = 300
 ):
     """Select an option from a dropdown (NSelect component)
 
@@ -223,7 +235,9 @@ def select_dropdown_option(
     page.wait_for_timeout(200)
 
 
-def fill_color_picker(page: Page, modal, hex_color: str, label: str = None, wait_ms: int = 300):
+def fill_color_picker(
+    page: Page, modal, hex_color: str, label: str | None = None, wait_ms: int = 300
+):
     """Fill the color picker with a hex color value
 
     Args:

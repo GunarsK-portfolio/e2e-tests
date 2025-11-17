@@ -8,6 +8,7 @@ import sys
 import time
 from pathlib import Path
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
@@ -124,7 +125,7 @@ def delete_resume(page, wait_ms: int = 1000):
     page.wait_for_timeout(wait_ms)
 
 
-def verify_resume_exists(page, file_name: str = None, timeout: int = 5000):
+def verify_resume_exists(page, file_name: str | None = None, timeout: int = 5000):
     """Verify that a resume file is displayed
 
     Args:
@@ -147,13 +148,14 @@ def verify_resume_exists(page, file_name: str = None, timeout: int = 5000):
     view_link = resume_card.locator('a:has-text("View Resume")').first
     try:
         view_link.wait_for(state="visible", timeout=timeout)
-        if file_name:
-            # Also verify file name if provided
-            file_text = resume_card.locator(f'text="{file_name}"').first
-            return file_text.count() > 0
-        return True
-    except Exception:
+    except PlaywrightTimeout:
         return False
+
+    if file_name:
+        # Also verify file name if provided
+        file_text = resume_card.locator(f'text="{file_name}"').first
+        return file_text.count() > 0
+    return True
 
 
 # ========================================
@@ -219,9 +221,9 @@ def test_profile():
             # Check if validation error appears (form should not save)
             page.wait_for_timeout(500)
             current_name = get_input_value(page, "Full Name")
-            if current_name == "":
-                print("   [OK] Validation prevents empty name field")
-                take_screenshot(page, "profile_02_validation_error", "Validation error")
+            assert current_name == "", "Validation should prevent saving with empty name"
+            print("   [OK] Validation prevents empty name field")
+            take_screenshot(page, "profile_02_validation_error", "Validation error")
 
             # Restore name
             fill_text_input(page, label="Full Name", value=original_name or test_name)
@@ -328,11 +330,13 @@ def test_profile():
             print("   [OK] Profile data persisted after reload")
 
             # Verify avatar persists (if uploaded)
-            if avatar_file.exists() and verify_avatar_exists(page):
+            if avatar_file.exists():
+                assert verify_avatar_exists(page), "Avatar should persist after reload"
                 print("   [OK] Avatar persisted after reload")
 
             # Verify resume persists (if uploaded)
-            if resume_file.exists() and verify_resume_exists(page):
+            if resume_file.exists():
+                assert verify_resume_exists(page), "Resume should persist after reload"
                 print("   [OK] Resume persisted after reload")
 
             take_screenshot(page, "profile_07_after_reload", "After reload")
@@ -432,14 +436,21 @@ def test_profile():
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
+        except PlaywrightTimeout as e:
+            print(f"\n[TIMEOUT ERROR] {e}")
+            take_screenshot(page, "profile_error_timeout", "Timeout occurred")
+            import traceback
+
+            traceback.print_exc()
+            raise
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "profile_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
         finally:
             context.close()
             browser.close()

@@ -7,6 +7,7 @@ Tests: Skill Types CRUD, Skills CRUD with type association, validation, search, 
 import sys
 import time
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
@@ -447,14 +448,21 @@ def test_skills_crud():
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
+        except PlaywrightTimeout as e:
+            print(f"\n[TIMEOUT ERROR] {e}")
+            take_screenshot(page, "skills_error_timeout", "Timeout occurred")
+            import traceback
+
+            traceback.print_exc()
+            raise
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "skills_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
         finally:
             context.close()
             browser.close()

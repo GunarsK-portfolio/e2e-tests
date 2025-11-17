@@ -86,7 +86,7 @@ task list                         # List all test suites
   - Form validation
   - Data persistence testing
 
-- **Skills** (13 steps):
+- **Skills** (19 steps):
   - Dual-tab CRUD (Skills + Skill Types)
   - Skill type association
   - Form validation

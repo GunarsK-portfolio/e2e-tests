@@ -7,6 +7,7 @@ Tests: Validation, Create, Edit, Search, Persistence, Delete, Date validation
 import sys
 import time
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
@@ -302,14 +303,21 @@ def test_certifications_crud():
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
+        except PlaywrightTimeout as e:
+            print(f"\n[TIMEOUT ERROR] {e}")
+            take_screenshot(page, "certifications_error_timeout", "Timeout occurred")
+            import traceback
+
+            traceback.print_exc()
+            raise
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "certifications_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
         finally:
             context.close()
             browser.close()

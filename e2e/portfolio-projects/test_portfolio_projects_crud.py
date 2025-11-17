@@ -7,6 +7,7 @@ Tests: Full CRUD, validation, URLs, dates, technologies, search, persistence
 import sys
 import time
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.auth.auth_manager import AuthManager
@@ -68,19 +69,20 @@ def select_category(page, category_name: str):
         print(f"   [WARN] Category '{category_name}' not found in dropdown")
 
 
-def toggle_ongoing_project(page, enabled: bool = True):
+def toggle_ongoing_project(page, *, enabled: bool = True):
     """Toggle the 'Ongoing' project switch
 
     Args:
         page: Playwright page object
-        enabled: True to enable (ongoing project), False to disable
+        enabled: True to enable (ongoing project), False to disable (keyword-only)
     """
     # Find the switch by its label
     form_item = page.locator('.n-form-item:has(.n-form-item-label:has-text("Ongoing"))').first
     switch = form_item.locator(".n-switch").first
 
     # Check current state
-    is_checked = "n-switch--active" in switch.get_attribute("class")
+    class_attr = switch.get_attribute("class") or ""
+    is_checked = "n-switch--active" in class_attr
 
     # Click if we need to change state
     if is_checked != enabled:
@@ -384,14 +386,21 @@ def test_portfolio_projects_crud():
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
+        except PlaywrightTimeout as e:
+            print(f"\n[TIMEOUT ERROR] {e}")
+            take_screenshot(page, "portfolio_error_timeout", "Timeout occurred")
+            import traceback
+
+            traceback.print_exc()
+            raise
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "portfolio_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
-            return False
+            raise
         finally:
             context.close()
             browser.close()
