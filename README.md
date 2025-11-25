@@ -225,7 +225,7 @@ from playwright.sync_api import sync_playwright
 def test_new_feature():
     with sync_playwright() as p:
         auth_manager = AuthManager()
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=config["headless"])
         page, context = auth_manager.authenticate(browser, strategy='auto')
 
         # Test logic here

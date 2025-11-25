@@ -27,7 +27,7 @@ def test_dashboard_navigation():
     """Test Dashboard page layout and navigation to all feature pages"""
     with sync_playwright() as p:
         auth_manager = AuthManager()
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=config["headless"])
         page, context = auth_manager.authenticate(browser, strategy="auto")
 
         if not page:

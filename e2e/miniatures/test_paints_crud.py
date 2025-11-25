@@ -37,7 +37,7 @@ def test_paints_crud():
     """Test Miniatures Paints tab full CRUD operations"""
     with sync_playwright() as p:
         auth_manager = AuthManager()
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=config["headless"])
         page, context = auth_manager.authenticate(browser, strategy="auto")
 
         if not page:
