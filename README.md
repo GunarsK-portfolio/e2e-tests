@@ -164,13 +164,26 @@ Edit `.env` file:
 TEST_ADMIN_USERNAME=admin
 TEST_ADMIN_PASSWORD=your_password
 
-# URLs
+# URLs (local development)
 TEST_ADMIN_WEB_URL=http://localhost:81
 TEST_ADMIN_API_URL=http://localhost:8083
 
 # Browser
 TEST_HEADLESS=false
 TEST_BROWSER=chromium
+TEST_IGNORE_HTTPS_ERRORS=false   # Set to true for CI with self-signed certs
+```
+
+### CI Configuration (HTTPS)
+
+For CI environments using Traefik with self-signed certificates:
+
+```bash
+TEST_ADMIN_WEB_URL=https://localhost:8443
+TEST_ADMIN_API_URL=https://localhost:8443/admin-api/v1
+TEST_AUTH_API_URL=https://localhost:8443/auth/v1
+TEST_HEADLESS=true
+TEST_IGNORE_HTTPS_ERRORS=true
 ```
 
 ## CI/CD

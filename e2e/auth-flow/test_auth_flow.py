@@ -21,7 +21,7 @@ def test_auth_flow():
     """Test complete authentication flow including login, logout, and token handling"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=config["headless"])
-        context = browser.new_context()
+        context = browser.new_context(ignore_https_errors=config.get("ignore_https_errors", False))
         page = context.new_page()
 
         print("\n=== AUTHENTICATION FLOW E2E TEST ===\n")

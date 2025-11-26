@@ -39,7 +39,10 @@ class AuthManager:
         """Load saved browser context if available"""
         if self.context_path.exists():
             try:
-                context = browser.new_context(storage_state=str(self.context_path))
+                context = browser.new_context(
+                    storage_state=str(self.context_path),
+                    ignore_https_errors=self.config.get("ignore_https_errors", False),
+                )
                 print("   [OK] Loaded saved auth context")
                 return context
             except Exception as e:
@@ -137,7 +140,9 @@ class AuthManager:
         # Only use saved context if credentials are not provided
         if strategy == "auto" and self.credentials["username"]:
             # Credentials are available, use them (don't trust saved context)
-            context = browser.new_context()
+            context = browser.new_context(
+                ignore_https_errors=self.config.get("ignore_https_errors", False)
+            )
             page = context.new_page()
 
             if self.login_with_credentials(page):
@@ -170,7 +175,9 @@ class AuthManager:
                 context.close()
 
         # Create new context
-        context = browser.new_context()
+        context = browser.new_context(
+            ignore_https_errors=self.config.get("ignore_https_errors", False)
+        )
         page = context.new_page()
 
         # Try credentials (if credentials strategy - auto already tried above)

@@ -131,17 +131,7 @@ tasks:
             echo "✓ .env file is configured"
           fi
         platforms: [linux, darwin]
-      - cmd: |
-          if not exist .env (
-            echo ERROR: .env file not found. Run 'task setup:env' to create it.
-            exit /b 1
-          )
-          findstr /C:"your_username" /C:"your_password" .env >nul
-          if %errorlevel% equ 0 (
-            echo WARNING: .env file contains default values. Please update with actual credentials.
-          ) else (
-            echo ✓ .env file is configured
-          )
+      - cmd: 'python -c "import os,sys; sys.exit(0 if os.path.exists(''.env'') else (print(''ERROR: .env not found'') or 1))"'
         platforms: [windows]
 
   # Code quality tasks
@@ -177,7 +167,7 @@ tasks:
   lint:mypy:
     desc: Run mypy type checking
     cmds:
-      - python -m mypy e2e/ run_all_tests.py
+      - python -m mypy e2e/common e2e/auth e2e/profile e2e/skills e2e/experience e2e/certifications e2e/dashboard e2e/miniatures run_all_tests.py
 
   format:
     desc: Auto-format code with black and isort

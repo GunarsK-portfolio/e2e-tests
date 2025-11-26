@@ -4,6 +4,7 @@ Common helper functions for E2E tests
 
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 from playwright.sync_api import Page
 
@@ -49,7 +50,11 @@ def check_element_exists(page, selector, name=""):
 
 
 def fill_text_input(
-    page: Page, placeholder: str = None, value: str = None, label: str = None, wait_ms: int = 200
+    page: Page,
+    placeholder: Optional[str] = None,
+    value: Optional[str] = None,
+    label: Optional[str] = None,
+    wait_ms: int = 200,
 ):
     """Fill a text input field by label (preferred) or placeholder (fallback)
 
@@ -70,15 +75,15 @@ def fill_text_input(
     else:
         raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
-    input_field.fill(value)
+    input_field.fill(value or "")
     page.wait_for_timeout(wait_ms)
 
 
 def fill_text_input_exact(
     page: Page,
-    placeholder: str = None,
-    value: str = None,
-    label: str = None,
+    placeholder: Optional[str] = None,
+    value: Optional[str] = None,
+    label: Optional[str] = None,
     exact: bool = True,
     wait_ms: int = 200,
 ):
@@ -105,12 +110,16 @@ def fill_text_input_exact(
     else:
         raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
-    input_field.fill(value)
+    input_field.fill(value or "")
     page.wait_for_timeout(wait_ms)
 
 
 def fill_textarea(
-    page: Page, placeholder: str = None, value: str = None, label: str = None, wait_ms: int = 200
+    page: Page,
+    placeholder: Optional[str] = None,
+    value: Optional[str] = None,
+    label: Optional[str] = None,
+    wait_ms: int = 200,
 ):
     """Fill a textarea field by label (preferred) or placeholder (fallback)
 
@@ -131,15 +140,15 @@ def fill_textarea(
     else:
         raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
-    textarea.fill(value)
+    textarea.fill(value or "")
     page.wait_for_timeout(wait_ms)
 
 
 def fill_number_input(
     page: Page,
-    placeholder: str = None,
-    value: int | str = None,
-    label: str = None,
+    placeholder: Optional[str] = None,
+    value: Optional[int | str] = None,
+    label: Optional[str] = None,
     wait_ms: int = 200,
 ):
     """Fill a number input field by label (preferred) or placeholder (fallback)
@@ -161,12 +170,16 @@ def fill_number_input(
     else:
         raise ValueError(LABEL_OR_PLACEHOLDER_REQUIRED_ERROR)
 
-    input_field.fill(str(value))
+    input_field.fill(str(value) if value is not None else "")
     page.wait_for_timeout(wait_ms)
 
 
 def fill_date_input(
-    page: Page, label: str = None, date_value: str = None, index: int = None, wait_ms: int = 200
+    page: Page,
+    label: Optional[str] = None,
+    date_value: Optional[str] = None,
+    index: Optional[int] = None,
+    wait_ms: int = 200,
 ):
     """Fill a date input field by label or index
 
@@ -182,21 +195,21 @@ def fill_date_input(
         form_item = page.locator(f'.n-form-item:has(.n-form-item-label:has-text("{label}"))').first
         date_input = form_item.locator('input[placeholder*="Select Date" i]').first
         if date_input.count() > 0:
-            date_input.fill(date_value)
+            date_input.fill(date_value or "")
             page.wait_for_timeout(wait_ms)
             return True
     elif index is not None:
         # Fallback to index-based selection
         date_inputs = page.locator('input[placeholder*="Select Date" i]')
         if date_inputs.count() > index:
-            date_inputs.nth(index).fill(date_value)
+            date_inputs.nth(index).fill(date_value or "")
             page.wait_for_timeout(wait_ms)
             return True
     return False
 
 
 def select_dropdown_option(
-    page: Page, modal, option_index: int = 0, label: str = None, wait_ms: int = 300
+    page: Page, modal, option_index: int = 0, label: Optional[str] = None, wait_ms: int = 300
 ):
     """Select an option from a dropdown (NSelect component)
 
@@ -223,7 +236,9 @@ def select_dropdown_option(
     page.wait_for_timeout(200)
 
 
-def fill_color_picker(page: Page, modal, hex_color: str, label: str = None, wait_ms: int = 300):
+def fill_color_picker(
+    page: Page, modal, hex_color: str, label: Optional[str] = None, wait_ms: int = 300
+):
     """Fill the color picker with a hex color value
 
     Args:

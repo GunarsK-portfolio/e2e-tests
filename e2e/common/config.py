@@ -89,6 +89,9 @@ class TestConfig:
             "browser": self._get_value(
                 "TEST_BROWSER", "chromium", env_vars
             ),  # chromium, firefox, webkit
+            "ignore_https_errors": self._parse_bool(
+                self._get_value("TEST_IGNORE_HTTPS_ERRORS", "false", env_vars)
+            ),
         }
 
     def get(self, key: str, default: Any = None) -> Any:

@@ -30,8 +30,10 @@ max-line-length = 100
 disable = [
     "C0111",  # missing-docstring
     "C0103",  # invalid-name (for test functions)
+    "R0911",  # too-many-return-statements (test functions have multiple exit points)
     "R0913",  # too-many-arguments
     "R0914",  # too-many-locals
+    "R0917",  # too-many-positional-arguments (helper functions need flexibility)
     "W0212",  # protected-access (for tests)
     "R0801",  # duplicate-code (common pattern reuse in tests)
     "R0912",  # too-many-branches (test functions can be complex)

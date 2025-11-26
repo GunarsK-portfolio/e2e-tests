@@ -7,6 +7,7 @@ Tests: Form validation, Update profile, Avatar upload/delete, Resume upload/dele
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 from playwright.sync_api import expect, sync_playwright
 
@@ -124,7 +125,7 @@ def delete_resume(page, wait_ms: int = 1000):
     page.wait_for_timeout(wait_ms)
 
 
-def verify_resume_exists(page, file_name: str = None, timeout: int = 5000):
+def verify_resume_exists(page, file_name: Optional[str] = None, timeout: int = 5000):
     """Verify that a resume file is displayed
 
     Args:
