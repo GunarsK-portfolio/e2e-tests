@@ -15,6 +15,7 @@ from e2e.common.config import get_config
 from e2e.common.helpers import (
     clear_search,
     close_modal,
+    confirm_image_crop,
     delete_row,
     fill_number_input,
     fill_text_input,
@@ -97,8 +98,9 @@ def test_themes_crud():
             fill_text_input(page, label="Theme Name", value=test_theme_name)
             fill_textarea(page, label="Description", value=test_theme_desc)
 
-            # Upload cover image
+            # Upload cover image (triggers cropper modal)
             upload_file(page, modal, test_image_path)
+            confirm_image_crop(page, "Crop Cover Image", "Upload Cover Image")
             assert verify_file_uploaded(modal), "Cover image should be uploaded"
             print("   [OK] Cover image uploaded")
 
@@ -152,8 +154,9 @@ def test_themes_crud():
             assert not verify_file_uploaded(modal), "Cover image should be removed"
             print("   [OK] Cover image removed")
 
-            # Re-upload the image
+            # Re-upload the image (triggers cropper modal)
             upload_file(page, modal, test_image_path)
+            confirm_image_crop(page, "Crop Cover Image", "Upload Cover Image")
             assert verify_file_uploaded(modal), "Cover image should be re-uploaded"
             print("   [OK] Cover image re-uploaded")
 

@@ -294,16 +294,42 @@ def remove_uploaded_file(page: Page, modal, button_text: str = "Remove Image", w
 
 
 def verify_file_uploaded(modal, file_name: str | None = None):
-    """Verify that a file has been uploaded by checking for avatar or file info"""
-    # Check for avatar (image preview)
+    """Verify that a file has been uploaded by checking for avatar, cover-preview, or file info"""
+    # Check for avatar (image preview) or cover-preview (themes)
     avatar = modal.locator(".n-avatar").first
-    if avatar.count() > 0:
+    cover_preview = modal.locator(".cover-preview").first
+    if avatar.count() > 0 or cover_preview.count() > 0:
         if file_name:
             # Also verify file name is displayed
             file_info = modal.locator(f'.file-info:has-text("{file_name}")').first
             return file_info.count() > 0
         return True
     return False
+
+
+def confirm_image_crop(page: Page, modal_title: str, button_text: str, wait_ms: int = 2000):
+    """Confirm image crop in the ImageCropperModal
+
+    Args:
+        page: Playwright page object
+        modal_title: Title of the cropper modal (e.g., "Crop Cover Image", "Crop Avatar")
+        button_text: Text of the confirm button (e.g., "Upload Cover Image", "Upload Avatar")
+        wait_ms: Wait time after upload completes
+    """
+    from playwright.sync_api import expect
+
+    # Locate the cropper modal by title
+    cropper_modal = page.locator(f'.n-modal[role="dialog"]:has-text("{modal_title}")').first
+
+    # Wait for modal to be visible
+    expect(cropper_modal).to_be_visible(timeout=5000)
+
+    # Click the confirm/upload button
+    upload_btn = cropper_modal.locator(f'button:has-text("{button_text}")').first
+    upload_btn.click()
+
+    # Wait for upload to complete and modal to close
+    page.wait_for_timeout(wait_ms)
 
 
 # ========================================
