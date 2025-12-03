@@ -57,7 +57,7 @@ def test_dashboard_navigation():
 
             # Check for navigation cards
             cards = page.locator(".n-card")
-            expect(cards).to_have_count(6)
+            expect(cards).to_have_count(7)
             print(f"   [OK] Found {cards.count()} navigation cards")
 
             take_screenshot(page, "dashboard_02_structure", "Dashboard structure verified")
@@ -67,7 +67,7 @@ def test_dashboard_navigation():
             # ========================================
             navigation_tests = [
                 {"name": "Profile", "url": "/profile", "button_text": "Edit Profile"},
-                {"name": "Skills", "url": "/skills", "button_text": "Manage Skills"},
+                {"name": "Skills", "url": "/skills", "button_text": "Manage"},
                 {"name": "Work Experience", "url": "/work-experience", "button_text": "Manage"},
                 {"name": "Certifications", "url": "/certifications", "button_text": "Manage"},
                 {
@@ -76,6 +76,7 @@ def test_dashboard_navigation():
                     "button_text": "Manage",
                 },
                 {"name": "Miniatures", "url": "/miniatures", "button_text": "Manage"},
+                {"name": "Messaging", "url": "/messaging", "button_text": "Manage"},
             ]
 
             step_num = 3
@@ -141,6 +142,7 @@ def test_dashboard_navigation():
             print("  [PASS] Navigation to Certifications")
             print("  [PASS] Navigation to Portfolio Projects")
             print("  [PASS] Navigation to Miniatures")
+            print("  [PASS] Navigation to Messaging")
             print("  [PASS] Return to Dashboard")
             print("  [PASS] Root URL redirect")
             print("\nScreenshots saved to /tmp/test_dashboard_*.png")

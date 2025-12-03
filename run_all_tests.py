@@ -120,6 +120,11 @@ class TestRunner:
                 self.testing_dir / "e2e" / "miniatures" / "test_projects_crud.py",
                 "Miniatures Projects CRUD",
             ),
+            # Messaging CRUD tests
+            (
+                self.testing_dir / "e2e" / "messaging" / "test_messaging_crud.py",
+                "Messaging CRUD",
+            ),
         ]
 
         print("\n" + "=" * 70)
