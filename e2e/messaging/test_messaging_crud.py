@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 E2E test for Messaging CRUD operations
 Tests: Recipients CRUD (validation, create, edit, search, delete)
@@ -43,27 +42,29 @@ def toggle_switch(page, label: str, wait_ms: int = 200):
     """
     form_item = page.locator(f'.n-form-item:has(.n-form-item-label:has-text("{label}"))').first
     switch = form_item.locator(".n-switch").first
+    expect(switch).to_be_visible()
     switch.click()
     page.wait_for_timeout(wait_ms)
 
 
-def click_view_button(page, row_identifier: str, wait_ms: int = 500):
+def click_view_button(page, row, wait_ms: int = 500):
     """Click the view button for a specific row
 
     Args:
         page: Playwright page object
-        row_identifier: Text to identify the row
+        row: Row locator (already selected)
         wait_ms: Wait time in milliseconds
 
     Returns:
         Modal locator
     """
-    row = page.locator(f'.n-data-table tbody tr:has-text("{row_identifier}")')
     view_btn = row.locator('button.n-button--small-type[aria-label*="View" i]').first
+    expect(view_btn).to_be_visible()
     view_btn.click()
     page.wait_for_timeout(wait_ms)
 
     modal = page.locator('.n-modal[role="dialog"]')
+    expect(modal).to_be_visible()
     return modal
 
 
@@ -197,8 +198,11 @@ def test_messaging_crud():
             modal = open_edit_modal(page, test_email)
             print("   [OK] Edit modal opened")
 
-            # Verify existing data loaded
-            email_input = page.locator('input[placeholder*="recipient@example.com" i]').first
+            # Verify existing data loaded - use form label to find the input
+            email_form_item = page.locator(
+                '.n-form-item:has(.n-form-item-label:has-text("Email"))'
+            ).first
+            email_input = email_form_item.locator("input").first
             expect(email_input).to_have_value(test_email)
             print("   [OK] Existing data loaded")
 
@@ -302,20 +306,12 @@ def test_messaging_crud():
                 subject_cell = first_row.locator("td").first
                 subject_text = subject_cell.inner_text()
 
-                # Click view button
-                view_btn = first_row.locator(
-                    'button.n-button--small-type[aria-label*="View" i]'
-                ).first
-                view_btn.click()
-                page.wait_for_timeout(500)
-
-                # Verify modal opened
-                view_modal = page.locator('.n-modal[role="dialog"]')
-                expect(view_modal).to_be_visible()
+                # Click view button using helper
+                view_modal = click_view_button(page, first_row)
                 print(f"   [OK] View modal opened for message: '{subject_text[:30]}...'")
 
-                # Verify modal title (first header is the modal title)
-                modal_title = view_modal.locator(".n-card-header__main").first
+                # Verify modal title (parent card header, not nested card headers)
+                modal_title = view_modal.locator("> .n-card-header .n-card-header__main")
                 expect(modal_title).to_contain_text("Message Details")
                 print("   [OK] Modal title is 'Message Details'")
 
@@ -418,8 +414,6 @@ def test_messaging_crud():
             print("  [PASS] Verify deletion")
             print("\nScreenshots saved to /tmp/test_messaging_*.png")
 
-            return True
-
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             take_screenshot(page, "messaging_error_assertion", "Assertion error")
@@ -427,13 +421,15 @@ def test_messaging_crud():
 
             traceback.print_exc()
             return False
-        except Exception as e:
+        except (TimeoutError, RuntimeError, ValueError) as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "messaging_error", "Error occurred")
             import traceback
 
             traceback.print_exc()
             return False
+        else:
+            return True
         finally:
             context.close()
             browser.close()
