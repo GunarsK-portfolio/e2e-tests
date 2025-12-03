@@ -48,6 +48,7 @@ task test:portfolio-projects      # Portfolio Projects CRUD
 task test:miniatures:themes       # Miniatures Themes CRUD
 task test:miniatures:paints       # Miniatures Paints CRUD
 task test:miniatures:projects     # Miniatures Projects CRUD
+task test:messaging               # Messaging CRUD
 ```
 
 ### Code Quality
@@ -140,10 +141,19 @@ task list                         # List all test suites
   - Protected route access control
   - Re-login after logout
 
-- **Dashboard Navigation** (10 steps):
+- **Dashboard Navigation** (11 steps):
   - Dashboard layout verification
-  - Navigation to all feature pages
+  - Navigation to all feature pages (including Messaging)
   - Root URL redirect testing
+
+- **Messaging** (15 steps):
+  - Recipients CRUD (create, edit, delete)
+  - Email and name validation
+  - Active/Inactive status toggle
+  - Messages read-only viewing
+  - Message details modal
+  - Search by email, name, subject
+  - Data persistence testing
 
 ## Authentication
 
@@ -267,7 +277,7 @@ python run_all_tests.py
 This executes all tests in optimal order:
 1. Authentication Flow (validates login/logout)
 2. Dashboard Navigation (validates routing)
-3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects, Miniatures)
+3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects, Miniatures, Messaging)
 
 ### Run Individual Tests
 
@@ -289,6 +299,9 @@ python e2e/portfolio-projects/test_portfolio_projects_crud.py
 python e2e/miniatures/test_themes_crud.py
 python e2e/miniatures/test_paints_crud.py
 python e2e/miniatures/test_projects_crud.py
+
+# Messaging tests
+python e2e/messaging/test_messaging_crud.py
 ```
 
 ## Test Statistics
@@ -305,7 +318,8 @@ python e2e/miniatures/test_projects_crud.py
 | Miniatures Themes CRUD | 9 | CRUD, image upload/removal, search |
 | Miniatures Paints CRUD | 9 | CRUD, color picker, manufacturer search |
 | Miniatures Projects CRUD | 9 | CRUD, multi-image upload, theme association |
-| **TOTAL** | **116 steps** | **10 comprehensive test suites** |
+| Messaging CRUD | 15 | Recipients CRUD, messages viewing, search |
+| **TOTAL** | **132 steps** | **11 comprehensive test suites** |
 
 ## Test Assets
 

@@ -37,6 +37,11 @@ tasks:
     cmds:
       - python e2e/miniatures/test_simple.py
 
+  test:messaging:
+    desc: Run Messaging CRUD tests
+    cmds:
+      - python e2e/messaging/test_messaging_crud.py
+
   # Test with options
   test:all:headless:
     desc: Run all tests in headless mode
