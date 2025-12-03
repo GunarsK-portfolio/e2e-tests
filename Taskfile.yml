@@ -167,7 +167,7 @@ tasks:
   lint:mypy:
     desc: Run mypy type checking
     cmds:
-      - python -m mypy e2e/common e2e/auth e2e/profile e2e/skills e2e/experience e2e/certifications e2e/dashboard e2e/miniatures run_all_tests.py
+      - python -m mypy e2e/common e2e/auth e2e/profile e2e/skills e2e/experience e2e/certifications e2e/dashboard e2e/miniatures e2e/messaging run_all_tests.py
 
   format:
     desc: Auto-format code with black and isort
