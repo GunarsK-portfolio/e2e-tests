@@ -10,7 +10,7 @@ import traceback
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.common.config import get_config
-from e2e.common.helpers import take_screenshot, verify_url_contains, wait_for_page_load
+from e2e.common.helpers import take_screenshot, wait_for_page_load
 
 config = get_config()
 BASE_URL = config["public_web_url"]
@@ -99,7 +99,8 @@ def test_error_pages():
                 page.wait_for_timeout(500)
 
                 # Verify navigated to contact
-                verify_url_contains(page, "/contact", "Navigated to contact page")
+                assert "/contact" in page.url, f"Expected /contact in URL, got: {page.url}"
+                print(f"   [OK] Navigated to contact page: {page.url}")
                 take_screenshot(page, "public_error_04_contact_from_404", "Contact from 404")
             else:
                 print("   [SKIP] No Contact link found on 404 page")
