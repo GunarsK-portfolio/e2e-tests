@@ -16,9 +16,9 @@ from pathlib import Path
 class PublicTestRunner:
     """Manages and runs public-web E2E tests"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.testing_dir = Path(__file__).parent
-        self.results = []
+        self.results: list[dict] = []
         self.start_time = None
         self.end_time = None
 

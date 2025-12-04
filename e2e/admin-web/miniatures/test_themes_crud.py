@@ -59,7 +59,7 @@ def test_themes_crud():
 
         # Test image path - relative to e2e-tests root
         test_image_path = str(
-            Path(__file__).parent.parent.parent.parent / "test-files" / "test_image.jpg"
+            Path(__file__).parent.parent.parent.parent / "test-files" / "test-image.jpg"
         )
 
         try:

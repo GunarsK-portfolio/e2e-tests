@@ -15,6 +15,7 @@ from e2e.common.helpers import (
     fill_text_input,
     fill_textarea,
     take_screenshot,
+    verify_element_count,
     verify_element_exists,
     wait_for_page_load,
 )
@@ -94,12 +95,13 @@ def test_contact_form():
             page.wait_for_timeout(500)
 
             # Check for validation errors
-            verify_element_exists(
+            has_errors, error_count = verify_element_count(
                 page,
                 ".n-form-item-feedback--error, .n-form-item--error-status",
                 "validation errors",
-                log_count=True,
             )
+            assert has_errors, "Expected validation errors but none were displayed"
+            assert error_count > 0, f"Expected at least one validation error, got {error_count}"
             take_screenshot(page, "public_contact_03_validation_errors", "Validation errors")
 
             # ========================================

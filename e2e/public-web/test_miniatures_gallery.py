@@ -12,6 +12,7 @@ from playwright.sync_api import expect, sync_playwright
 from e2e.common.config import get_config
 from e2e.common.helpers import (
     take_screenshot,
+    verify_element_count,
     verify_element_exists,
     verify_url_contains,
     wait_for_page_load,
@@ -170,11 +171,10 @@ def test_miniatures_gallery():
                     print("   [OK] Paint colors section found")
 
                     # From MiniatureProject.vue: .color-swatch-compact class
-                    verify_element_exists(
+                    verify_element_count(
                         page,
                         ".color-swatch-compact, .paint-swatches",
                         "color swatches",
-                        log_count=True,
                     )
                     take_screenshot(
                         page, "public_miniatures_07_paint_colors", "Paint colors section"
@@ -195,7 +195,7 @@ def test_miniatures_gallery():
                     print("   [OK] Techniques section found")
 
                     # Check for technique tags
-                    verify_element_exists(page, ".n-tag", "technique tags", log_count=True)
+                    verify_element_count(page, ".n-tag", "technique tags")
                 else:
                     print("   [INFO] No techniques section found")
 

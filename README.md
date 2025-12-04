@@ -215,38 +215,9 @@ After first login, context is saved for instant authentication.
 
 ## Configuration
 
-Edit `.env` file:
+See [.env.example](.env.example) for all available options with detailed comments.
 
-```bash
-# Authentication (for admin tests)
-TEST_ADMIN_USERNAME=admin
-TEST_ADMIN_PASSWORD=your_password
-
-# URLs (local development)
-TEST_ADMIN_WEB_URL=http://localhost:81
-TEST_ADMIN_API_URL=http://localhost:8083
-TEST_PUBLIC_WEB_URL=http://localhost
-TEST_PUBLIC_API_URL=http://localhost/api/v1
-
-# Browser
-TEST_HEADLESS=false
-TEST_BROWSER=chromium
-TEST_IGNORE_HTTPS_ERRORS=false   # Set to true for CI with self-signed certs
-```
-
-### CI Configuration (HTTPS)
-
-For CI environments using Traefik with self-signed certificates:
-
-```bash
-TEST_ADMIN_WEB_URL=https://localhost:8443
-TEST_ADMIN_API_URL=https://localhost:8443/admin-api/v1
-TEST_AUTH_API_URL=https://localhost:8443/auth/v1
-TEST_PUBLIC_WEB_URL=https://localhost
-TEST_PUBLIC_API_URL=https://localhost/api/v1
-TEST_HEADLESS=true
-TEST_IGNORE_HTTPS_ERRORS=true
-```
+For CI with HTTPS/Traefik, set `TEST_IGNORE_HTTPS_ERRORS=true` and use HTTPS URLs.
 
 ## CI/CD
 
@@ -322,54 +293,6 @@ test:admin:new-feature:
     - python e2e/admin-web/new_feature/test_new_feature.py
 ```
 
-## Test Execution
-
-### Run Admin Tests
-
-```bash
-python run_admin_tests.py
-```
-
-This executes all admin tests in optimal order:
-1. Authentication Flow (validates login/logout)
-2. Dashboard Navigation (validates routing)
-3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects, Miniatures, Messaging)
-
-### Run Public Tests
-
-```bash
-python run_public_tests.py
-```
-
-This executes all public tests:
-1. Home Page
-2. Contact Form
-3. Miniatures Gallery
-4. Error Pages
-
-### Run Individual Tests
-
-```bash
-# Admin tests
-python e2e/admin-web/auth-flow/test_auth_flow.py
-python e2e/admin-web/dashboard/test_dashboard_navigation.py
-python e2e/admin-web/profile/test_profile.py
-python e2e/admin-web/skills/test_skills_crud.py
-python e2e/admin-web/experience/test_experience_crud.py
-python e2e/admin-web/certifications/test_certifications_crud.py
-python e2e/admin-web/portfolio-projects/test_portfolio_projects_crud.py
-python e2e/admin-web/miniatures/test_themes_crud.py
-python e2e/admin-web/miniatures/test_paints_crud.py
-python e2e/admin-web/miniatures/test_projects_crud.py
-python e2e/admin-web/messaging/test_messaging_crud.py
-
-# Public tests
-python e2e/public-web/test_home_page.py
-python e2e/public-web/test_contact_form.py
-python e2e/public-web/test_miniatures_gallery.py
-python e2e/public-web/test_error_pages.py
-```
-
 ## Test Statistics
 
 | Test Suite | Steps | Coverage |
@@ -393,10 +316,24 @@ python e2e/public-web/test_error_pages.py
 | Error Pages | 4 | 404 page, navigation links |
 | **TOTAL** | **~160 steps** | **15 comprehensive test suites** |
 
+## Test Coverage
+
+The test suites provide comprehensive coverage of the portfolio application:
+
+- **Admin-Web**: Full CRUD lifecycle testing for all management views with form
+  validation, error handling, and file uploads
+- **Public-Web**: User journey testing including home page sections, contact form
+  validation/submission, miniatures gallery navigation, and error page handling
+- **Authentication**: Complete auth flow from login through session management to
+  logout with persistence verification
+
+All critical user paths are covered with step-by-step verification and automated
+screenshot capture for visual regression documentation.
+
 ## Test Assets
 
 Test files are located in `test-files/`:
-- `test_image.jpg` - Used for theme cover images and project image uploads
+- `test-image.jpg` - Used for theme cover images and project image uploads
 - `test-avatar.jpg` - Used for profile avatar upload testing
 - `test-resume.pdf` - Used for profile resume upload testing
 

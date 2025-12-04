@@ -693,14 +693,13 @@ def verify_section_visible(
     return False
 
 
-def verify_element_exists(page: Page, selector: str, name: str, log_count: bool = False):
+def verify_element_exists(page: Page, selector: str, name: str):
     """Check if element exists and log result
 
     Args:
         page: Playwright page object
         selector: CSS selector or locator string
         name: Display name for logging
-        log_count: If True, log the count of elements found
 
     Returns:
         tuple: (exists: bool, count: int)
@@ -708,10 +707,27 @@ def verify_element_exists(page: Page, selector: str, name: str, log_count: bool 
     elements = page.locator(selector)
     count = elements.count()
     if count > 0:
-        if log_count:
-            print(f"   [OK] Found {count} {name}")
-        else:
-            print(f"   [OK] {name} visible")
+        print(f"   [OK] {name} visible")
+        return True, count
+    print(f"   [INFO] {name} not found")
+    return False, 0
+
+
+def verify_element_count(page: Page, selector: str, name: str):
+    """Check if element exists and log the count found
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector or locator string
+        name: Display name for logging
+
+    Returns:
+        tuple: (exists: bool, count: int)
+    """
+    elements = page.locator(selector)
+    count = elements.count()
+    if count > 0:
+        print(f"   [OK] Found {count} {name}")
         return True, count
     print(f"   [INFO] {name} not found")
     return False, 0

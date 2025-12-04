@@ -13,6 +13,7 @@ from e2e.common.config import get_config
 from e2e.common.helpers import (
     scroll_to_section,
     take_screenshot,
+    verify_element_count,
     verify_element_exists,
     wait_for_page_load,
 )
@@ -90,7 +91,7 @@ def test_home_page():
                 print("   [OK] Skills section visible")
 
                 # Check for skill tags
-                verify_element_exists(page, ".n-tag", "skill tags", log_count=True)
+                verify_element_count(page, ".n-tag", "skill tags")
                 take_screenshot(page, "public_home_04_skills", "Skills section")
 
             # ========================================
@@ -105,7 +106,7 @@ def test_home_page():
                 print("   [OK] Projects section visible")
 
                 # Check for project cards
-                verify_element_exists(page, ".n-card", "project cards", log_count=True)
+                verify_element_count(page, ".n-card", "project cards")
                 take_screenshot(page, "public_home_05_projects", "Projects section")
 
             # ========================================

@@ -59,3 +59,18 @@ ignore_missing_imports = true  # Playwright imports
 [[tool.mypy.overrides]]
 module = "playwright.*"
 ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "ARG", "SIM"]
+ignore = [
+    "TRY300",  # Consider moving return to else - acceptable in tests for clarity
+    "BLE001",  # Do not catch blind exception - tests need broad exception handling for cleanup
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["ARG001"]  # Unused function argument - common in test fixtures
+"run_*.py" = ["ARG001"]

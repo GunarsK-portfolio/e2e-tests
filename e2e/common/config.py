@@ -30,6 +30,9 @@ class TestConfig:
                         line = line.strip()
                         if line and not line.startswith("#") and "=" in line:
                             key, value = line.split("=", 1)
+                            # Strip inline comments (# at end of value)
+                            if "#" in value:
+                                value = value.split("#")[0]
                             env_vars[key.strip()] = value.strip().strip("\"'")
             except Exception as e:
                 print(f"[WARN] Could not read .env file: {e}")
