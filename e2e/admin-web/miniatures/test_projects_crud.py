@@ -68,8 +68,10 @@ def test_projects_crud():
         updated_completed_date = "2024-06-15"
         updated_display_order = 10
 
-        # Test image path - relative to test file
-        test_image_path = str(Path(__file__).parent.parent.parent / "test-files" / "test_image.jpg")
+        # Test image path - relative to e2e-tests root
+        test_image_path = str(
+            Path(__file__).parent.parent.parent.parent / "test-files" / "test_image.jpg"
+        )
 
         try:
             # ========================================

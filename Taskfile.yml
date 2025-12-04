@@ -2,56 +2,114 @@ version: '3'
 
 tasks:
   # Top-level test execution tasks
-  test:all:
-    desc: Run all E2E tests
+  test:admin:
+    desc: Run admin-web E2E tests
     cmds:
-      - python run_all_tests.py --no-confirm
+      - python run_admin_tests.py --no-confirm
 
-  test:profile:
-    desc: Run Profile management tests
+  test:public:
+    desc: Run public-web E2E tests
     cmds:
-      - python e2e/profile/test_profile.py
+      - python run_public_tests.py --no-confirm
 
-  test:skills:
-    desc: Run Skills CRUD tests
+  # Headless variants
+  test:admin:headless:
+    desc: Run admin-web tests in headless mode
     cmds:
-      - python e2e/skills/test_skills_crud.py
+      - TEST_HEADLESS=true python run_admin_tests.py --no-confirm
 
-  test:experience:
-    desc: Run Work Experience CRUD tests
+  test:public:headless:
+    desc: Run public-web tests in headless mode
     cmds:
-      - python e2e/experience/test_experience_crud.py
+      - TEST_HEADLESS=true python run_public_tests.py --no-confirm
 
-  test:certifications:
-    desc: Run Certifications/Education CRUD tests
+  # Interactive variants
+  test:admin:interactive:
+    desc: Run admin-web tests with confirmation prompt
     cmds:
-      - python e2e/certifications/test_certifications_crud.py
+      - python run_admin_tests.py
 
-  test:miniatures:
-    desc: Run Miniatures comprehensive tests
+  test:public:interactive:
+    desc: Run public-web tests with confirmation prompt
     cmds:
-      - python e2e/miniatures/test_miniatures_comprehensive.py
+      - python run_public_tests.py
 
-  test:miniatures:simple:
-    desc: Run simple Miniatures tab navigation test
+  # Individual admin-web tests
+  test:admin:auth:
+    desc: Run authentication flow test
     cmds:
-      - python e2e/miniatures/test_simple.py
+      - python e2e/admin-web/auth-flow/test_auth_flow.py
 
-  test:messaging:
-    desc: Run Messaging CRUD tests
+  test:admin:dashboard:
+    desc: Run dashboard navigation test
     cmds:
-      - python e2e/messaging/test_messaging_crud.py
+      - python e2e/admin-web/dashboard/test_dashboard_navigation.py
 
-  # Test with options
-  test:all:headless:
-    desc: Run all tests in headless mode
+  test:admin:profile:
+    desc: Run profile management tests
     cmds:
-      - TEST_HEADLESS=true python run_all_tests.py --no-confirm
+      - python e2e/admin-web/profile/test_profile.py
 
-  test:all:interactive:
-    desc: Run all tests with confirmation prompt
+  test:admin:skills:
+    desc: Run skills CRUD tests
     cmds:
-      - python run_all_tests.py
+      - python e2e/admin-web/skills/test_skills_crud.py
+
+  test:admin:experience:
+    desc: Run work experience CRUD tests
+    cmds:
+      - python e2e/admin-web/experience/test_experience_crud.py
+
+  test:admin:certifications:
+    desc: Run certifications CRUD tests
+    cmds:
+      - python e2e/admin-web/certifications/test_certifications_crud.py
+
+  test:admin:projects:
+    desc: Run portfolio projects CRUD tests
+    cmds:
+      - python e2e/admin-web/portfolio-projects/test_portfolio_projects_crud.py
+
+  test:admin:paints:
+    desc: Run miniatures paints CRUD tests
+    cmds:
+      - python e2e/admin-web/miniatures/test_paints_crud.py
+
+  test:admin:themes:
+    desc: Run miniatures themes CRUD tests
+    cmds:
+      - python e2e/admin-web/miniatures/test_themes_crud.py
+
+  test:admin:miniatures:
+    desc: Run miniatures projects CRUD tests
+    cmds:
+      - python e2e/admin-web/miniatures/test_projects_crud.py
+
+  test:admin:messaging:
+    desc: Run messaging CRUD tests
+    cmds:
+      - python e2e/admin-web/messaging/test_messaging_crud.py
+
+  # Individual public-web tests
+  test:public:home:
+    desc: Run home page test
+    cmds:
+      - python e2e/public-web/test_home_page.py
+
+  test:public:contact:
+    desc: Run contact form test
+    cmds:
+      - python e2e/public-web/test_contact_form.py
+
+  test:public:gallery:
+    desc: Run miniatures gallery test
+    cmds:
+      - python e2e/public-web/test_miniatures_gallery.py
+
+  test:public:errors:
+    desc: Run error pages test
+    cmds:
+      - python e2e/public-web/test_error_pages.py
 
   # Setup and configuration
   setup:
@@ -111,16 +169,32 @@ tasks:
 
   # Documentation and help
   list:
-    desc: List all available tests
+    desc: List all available test suites
     cmds:
       - echo "Available test suites:"
-      - echo "  - Profile Management (test:profile)"
-      - echo "  - Skills CRUD (test:skills)"
-      - echo "  - Work Experience CRUD (test:experience)"
-      - echo "  - Certifications/Education CRUD (test:certifications)"
-      - echo "  - Miniatures Comprehensive (test:miniatures)"
       - echo ""
-      - echo "Run 'task test:all' to execute all tests"
+      - echo "  ADMIN-WEB TESTS:"
+      - echo "    task test:admin              - Run all admin-web tests"
+      - echo "    task test:admin:headless     - Run admin-web tests headless"
+      - echo "    task test:admin:auth         - Authentication flow"
+      - echo "    task test:admin:dashboard    - Dashboard navigation"
+      - echo "    task test:admin:profile      - Profile management"
+      - echo "    task test:admin:skills       - Skills CRUD"
+      - echo "    task test:admin:experience   - Work experience CRUD"
+      - echo "    task test:admin:certifications - Certifications CRUD"
+      - echo "    task test:admin:projects     - Portfolio projects CRUD"
+      - echo "    task test:admin:paints       - Miniatures paints CRUD"
+      - echo "    task test:admin:themes       - Miniatures themes CRUD"
+      - echo "    task test:admin:miniatures   - Miniatures projects CRUD"
+      - echo "    task test:admin:messaging    - Messaging CRUD"
+      - echo ""
+      - echo "  PUBLIC-WEB TESTS:"
+      - echo "    task test:public             - Run all public-web tests"
+      - echo "    task test:public:headless    - Run public-web tests headless"
+      - echo "    task test:public:home        - Home page"
+      - echo "    task test:public:contact     - Contact form"
+      - echo "    task test:public:gallery     - Miniatures gallery"
+      - echo "    task test:public:errors      - Error pages"
 
   check:env:
     desc: Check if .env file exists and is configured
@@ -133,7 +207,7 @@ tasks:
           if grep -q "your_username\|your_password" .env; then
             echo "WARNING: .env file contains default values. Please update with actual credentials."
           else
-            echo "✓ .env file is configured"
+            echo "OK - .env file is configured"
           fi
         platforms: [linux, darwin]
       - cmd: 'python -c "import os,sys; sys.exit(0 if os.path.exists(''.env'') else (print(''ERROR: .env not found'') or 1))"'
@@ -167,12 +241,12 @@ tasks:
   lint:pylint:
     desc: Run pylint static analysis
     cmds:
-      - python -m pylint e2e/ run_all_tests.py
+      - python -m pylint e2e/ run_admin_tests.py run_public_tests.py
 
   lint:mypy:
     desc: Run mypy type checking
     cmds:
-      - python -m mypy e2e/common e2e/auth e2e/profile e2e/skills e2e/experience e2e/certifications e2e/dashboard e2e/miniatures e2e/messaging run_all_tests.py
+      - python -m mypy e2e/common e2e/auth run_admin_tests.py run_public_tests.py
 
   format:
     desc: Auto-format code with black and isort
@@ -189,8 +263,26 @@ tasks:
 
   # CI/CD tasks
   ci:all:
-    desc: Run all checks suitable for CI
+    desc: Run all CI checks (format + lint, no tests)
+    cmds:
+      - task: format
+      - task: format:check
+      - task: lint:black
+      - task: lint:flake8
+      - task: lint:isort
+      - task: lint:pylint
+      - task: lint:mypy
+
+  ci:admin:
+    desc: Run CI checks for admin-web (lint + admin tests headless)
     cmds:
       - task: lint
       - task: check:env
-      - TEST_HEADLESS=true python run_all_tests.py --no-confirm
+      - TEST_HEADLESS=true python run_admin_tests.py --no-confirm
+
+  ci:public:
+    desc: Run CI checks for public-web (lint + public tests headless)
+    cmds:
+      - task: lint
+      - task: check:env
+      - TEST_HEADLESS=true python run_public_tests.py --no-confirm

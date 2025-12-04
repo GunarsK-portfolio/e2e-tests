@@ -1,6 +1,6 @@
 # E2E Tests
 
-End-to-end tests for portfolio admin web using Playwright and Python.
+End-to-end tests for portfolio applications using Playwright and Python.
 
 ## Quick Start
 
@@ -14,17 +14,19 @@ task setup:env                    # Create .env from template
 TEST_ADMIN_USERNAME=admin
 TEST_ADMIN_PASSWORD=your_password
 TEST_ADMIN_WEB_URL=http://localhost:81
+TEST_PUBLIC_WEB_URL=http://localhost
 
 # Run tests
-task test:all                     # All tests
-task test:profile                 # Individual test suite
+task test:admin                   # Admin-web tests
+task test:public                  # Public-web tests
+task test:admin:skills            # Individual test suite
 ```
 
 ## Prerequisites
 
 - Python 3.12+
-- Running services (admin-web on port 81, admin-api on 8083)
-- Valid admin credentials in `.env`
+- Running services via Docker Compose
+- Valid admin credentials in `.env` (for admin tests)
 
 Start services:
 
@@ -38,17 +40,28 @@ docker-compose up -d
 ### Testing
 
 ```bash
-task test:all                     # All tests (browser visible)
-task test:all:headless            # All tests (headless mode)
-task test:profile                 # Profile management
-task test:skills                  # Skills CRUD
-task test:experience              # Work Experience CRUD
-task test:certifications          # Certifications CRUD
-task test:portfolio-projects      # Portfolio Projects CRUD
-task test:miniatures:themes       # Miniatures Themes CRUD
-task test:miniatures:paints       # Miniatures Paints CRUD
-task test:miniatures:projects     # Miniatures Projects CRUD
-task test:messaging               # Messaging CRUD
+# Admin-web tests (require authentication)
+task test:admin                   # All admin tests (browser visible)
+task test:admin:headless          # All admin tests (headless mode)
+task test:admin:auth              # Authentication flow
+task test:admin:dashboard         # Dashboard navigation
+task test:admin:profile           # Profile management
+task test:admin:skills            # Skills CRUD
+task test:admin:experience        # Work Experience CRUD
+task test:admin:certifications    # Certifications CRUD
+task test:admin:projects          # Portfolio Projects CRUD
+task test:admin:paints            # Miniatures Paints CRUD
+task test:admin:themes            # Miniatures Themes CRUD
+task test:admin:miniatures        # Miniatures Projects CRUD
+task test:admin:messaging         # Messaging CRUD
+
+# Public-web tests (no authentication required)
+task test:public                  # All public tests (browser visible)
+task test:public:headless         # All public tests (headless mode)
+task test:public:home             # Home page
+task test:public:contact          # Contact form
+task test:public:gallery          # Miniatures gallery
+task test:public:errors           # Error pages
 ```
 
 ### Code Quality
@@ -56,7 +69,8 @@ task test:messaging               # Messaging CRUD
 ```bash
 task lint                         # Run all linters (black, flake8, isort, pylint, mypy)
 task format                       # Auto-format code
-task ci:all                       # Run all CI checks
+task ci:admin                     # Run all CI checks (admin tests)
+task ci:public                    # Run all CI checks (public tests)
 ```
 
 ### Maintenance
@@ -69,7 +83,21 @@ task clean                        # Clean cache and screenshots
 task list                         # List all test suites
 ```
 
-## Test Coverage
+## Test Suites
+
+### Admin-Web Tests (11 suites)
+
+- **Authentication Flow** (11 steps):
+  - Login/logout functionality
+  - Invalid credentials handling
+  - Session persistence (reload and new tab)
+  - Protected route access control
+  - Re-login after logout
+
+- **Dashboard Navigation** (11 steps):
+  - Dashboard layout verification
+  - Navigation to all feature pages (including Messaging)
+  - Root URL redirect testing
 
 - **Profile** (14 steps):
   - Basic information and contact info updates
@@ -134,18 +162,6 @@ task list                         # List all test suites
   - Search by title and manufacturer
   - Data persistence testing
 
-- **Authentication Flow** (11 steps):
-  - Login/logout functionality
-  - Invalid credentials handling
-  - Session persistence (reload and new tab)
-  - Protected route access control
-  - Re-login after logout
-
-- **Dashboard Navigation** (11 steps):
-  - Dashboard layout verification
-  - Navigation to all feature pages (including Messaging)
-  - Root URL redirect testing
-
 - **Messaging** (15 steps):
   - Recipients CRUD (create, edit, delete)
   - Email and name validation
@@ -155,9 +171,41 @@ task list                         # List all test suites
   - Search by email, name, subject
   - Data persistence testing
 
+### Public-Web Tests (4 suites)
+
+- **Home Page**:
+  - Hero section with title and description
+  - Skills display and types
+  - Work experience section
+  - Certifications display
+  - Portfolio projects grid
+  - Contact CTA section
+  - Responsive navigation
+
+- **Contact Form**:
+  - Form field validation
+  - Required field checks
+  - Email format validation
+  - Successful form submission
+  - Error handling
+
+- **Miniatures Gallery**:
+  - Theme grid display
+  - Theme detail navigation
+  - Miniature detail pages
+  - Image carousel/gallery
+  - Paint colors section
+  - Techniques section
+  - Back navigation
+
+- **Error Pages**:
+  - 404 Not Found page
+  - Navigation back to home
+  - Contact link functionality
+
 ## Authentication
 
-Tests use a multi-strategy auth system:
+Admin tests use a multi-strategy auth system:
 
 1. **Saved Context** (fastest) - Reuses browser session from previous run
 2. **Credentials** - Auto-login from `.env`
@@ -170,13 +218,15 @@ After first login, context is saved for instant authentication.
 Edit `.env` file:
 
 ```bash
-# Authentication
+# Authentication (for admin tests)
 TEST_ADMIN_USERNAME=admin
 TEST_ADMIN_PASSWORD=your_password
 
 # URLs (local development)
 TEST_ADMIN_WEB_URL=http://localhost:81
 TEST_ADMIN_API_URL=http://localhost:8083
+TEST_PUBLIC_WEB_URL=http://localhost
+TEST_PUBLIC_API_URL=http://localhost/api/v1
 
 # Browser
 TEST_HEADLESS=false
@@ -192,6 +242,8 @@ For CI environments using Traefik with self-signed certificates:
 TEST_ADMIN_WEB_URL=https://localhost:8443
 TEST_ADMIN_API_URL=https://localhost:8443/admin-api/v1
 TEST_AUTH_API_URL=https://localhost:8443/auth/v1
+TEST_PUBLIC_WEB_URL=https://localhost
+TEST_PUBLIC_API_URL=https://localhost/api/v1
 TEST_HEADLESS=true
 TEST_IGNORE_HTTPS_ERRORS=true
 ```
@@ -199,11 +251,15 @@ TEST_IGNORE_HTTPS_ERRORS=true
 ## CI/CD
 
 ```bash
-task ci:all                       # Linting + headless tests
+task ci:admin                     # Linting + admin tests headless
+task ci:public                    # Linting + public tests headless
 ```
 
-Configured with:
+GitHub Actions workflows:
+- `admin-api`, `admin-web` repos run admin tests via `e2e.yml`
+- `public-api`, `public-web` repos run public tests via `e2e.yml`
 
+Configured with:
 - GitHub Actions workflow (`.github/workflows/ci.yml`)
 - CodeRabbit for automated reviews (`.coderabbit.yaml`)
 - Renovate for dependency updates (`renovate.json`)
@@ -225,7 +281,7 @@ All code passes with **pylint 10.00/10**:
 ```bash
 task clean                        # Clear saved context
 task check:env                    # Verify config
-task test:all                     # Re-authenticate
+task test:admin                   # Re-authenticate
 ```
 
 **Services not running:**
@@ -260,54 +316,65 @@ def test_new_feature():
 Add task to `Taskfile.yml`:
 
 ```yaml
-test:new-feature:
+test:admin:new-feature:
   desc: Run new feature tests
   cmds:
-    - python e2e/new_feature/test_new_feature.py
+    - python e2e/admin-web/new_feature/test_new_feature.py
 ```
 
 ## Test Execution
 
-### Run All Tests
+### Run Admin Tests
 
 ```bash
-python run_all_tests.py
+python run_admin_tests.py
 ```
 
-This executes all tests in optimal order:
+This executes all admin tests in optimal order:
 1. Authentication Flow (validates login/logout)
 2. Dashboard Navigation (validates routing)
 3. All CRUD tests (Profile, Skills, Work Experience, Certifications, Portfolio Projects, Miniatures, Messaging)
 
+### Run Public Tests
+
+```bash
+python run_public_tests.py
+```
+
+This executes all public tests:
+1. Home Page
+2. Contact Form
+3. Miniatures Gallery
+4. Error Pages
+
 ### Run Individual Tests
 
 ```bash
-# Authentication
-python e2e/auth-flow/test_auth_flow.py
+# Admin tests
+python e2e/admin-web/auth-flow/test_auth_flow.py
+python e2e/admin-web/dashboard/test_dashboard_navigation.py
+python e2e/admin-web/profile/test_profile.py
+python e2e/admin-web/skills/test_skills_crud.py
+python e2e/admin-web/experience/test_experience_crud.py
+python e2e/admin-web/certifications/test_certifications_crud.py
+python e2e/admin-web/portfolio-projects/test_portfolio_projects_crud.py
+python e2e/admin-web/miniatures/test_themes_crud.py
+python e2e/admin-web/miniatures/test_paints_crud.py
+python e2e/admin-web/miniatures/test_projects_crud.py
+python e2e/admin-web/messaging/test_messaging_crud.py
 
-# Navigation
-python e2e/dashboard/test_dashboard_navigation.py
-
-# CRUD tests
-python e2e/profile/test_profile.py
-python e2e/skills/test_skills_crud.py
-python e2e/experience/test_experience_crud.py
-python e2e/certifications/test_certifications_crud.py
-python e2e/portfolio-projects/test_portfolio_projects_crud.py
-
-# Miniatures tests
-python e2e/miniatures/test_themes_crud.py
-python e2e/miniatures/test_paints_crud.py
-python e2e/miniatures/test_projects_crud.py
-
-# Messaging tests
-python e2e/messaging/test_messaging_crud.py
+# Public tests
+python e2e/public-web/test_home_page.py
+python e2e/public-web/test_contact_form.py
+python e2e/public-web/test_miniatures_gallery.py
+python e2e/public-web/test_error_pages.py
 ```
 
 ## Test Statistics
 
 | Test Suite | Steps | Coverage |
 |------------|-------|----------|
+| **Admin-Web Tests** | | |
 | Authentication Flow | 11 | Login, logout, session management, protected routes |
 | Dashboard Navigation | 10 | Page navigation, routing, layout verification |
 | Profile Management | 14 | CRUD, avatar upload, resume upload, file deletion |
@@ -319,7 +386,12 @@ python e2e/messaging/test_messaging_crud.py
 | Miniatures Paints CRUD | 9 | CRUD, color picker, manufacturer search |
 | Miniatures Projects CRUD | 9 | CRUD, multi-image upload, theme association |
 | Messaging CRUD | 15 | Recipients CRUD, messages viewing, search |
-| **TOTAL** | **132 steps** | **11 comprehensive test suites** |
+| **Public-Web Tests** | | |
+| Home Page | 8 | Hero, skills, experience, certifications, projects |
+| Contact Form | 6 | Form validation, submission, error handling |
+| Miniatures Gallery | 9 | Theme grid, detail pages, carousel, navigation |
+| Error Pages | 4 | 404 page, navigation links |
+| **TOTAL** | **~160 steps** | **15 comprehensive test suites** |
 
 ## Test Assets
 
