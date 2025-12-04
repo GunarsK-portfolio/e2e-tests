@@ -11,6 +11,7 @@ import sys
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 
 class PublicTestRunner:
@@ -19,10 +20,10 @@ class PublicTestRunner:
     def __init__(self) -> None:
         self.testing_dir = Path(__file__).parent
         self.results: list[dict] = []
-        self.start_time = None
-        self.end_time = None
+        self.start_time: Optional[datetime] = None
+        self.end_time: Optional[datetime] = None
 
-    def run_test(self, test_path, test_name):
+    def run_test(self, test_path: Path, test_name: str) -> bool:
         """Run a single test file"""
         print("\n" + "=" * 70)
         print(f"Running: {test_name}")
@@ -80,7 +81,7 @@ class PublicTestRunner:
             )
             return False
 
-    def get_tests(self):
+    def get_tests(self) -> list[tuple[Path, str]]:
         """Get list of public-web tests"""
         base = self.testing_dir / "e2e" / "public-web"
         return [
@@ -90,7 +91,7 @@ class PublicTestRunner:
             (base / "test_error_pages.py", "Error Pages"),
         ]
 
-    def run_tests(self):
+    def run_tests(self) -> bool:
         """Run all public-web tests"""
         self.start_time = datetime.now(timezone.utc)
 
@@ -119,8 +120,9 @@ class PublicTestRunner:
         self.end_time = datetime.now(timezone.utc)
         return self.print_summary()
 
-    def print_summary(self):
+    def print_summary(self) -> bool:
         """Print test execution summary"""
+        assert self.start_time is not None and self.end_time is not None
         duration = (self.end_time - self.start_time).total_seconds()
 
         print("\n" + "=" * 70)
@@ -154,7 +156,7 @@ class PublicTestRunner:
         return passed == len(self.results)
 
 
-def main():
+def main() -> int:
     """Main entry point"""
     parser = argparse.ArgumentParser(description="Run public-web E2E tests")
     parser.add_argument(

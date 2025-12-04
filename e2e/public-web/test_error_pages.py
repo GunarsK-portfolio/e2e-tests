@@ -78,10 +78,9 @@ def test_error_pages():
 
             # Verify navigated to home
             current_url = page.url
-            if current_url in (BASE_URL, f"{BASE_URL}/"):
-                print(f"   [OK] Navigated to home page: {current_url}")
-            else:
-                print(f"   [INFO] Current URL: {current_url}")
+            is_home = current_url in (BASE_URL, f"{BASE_URL}/")
+            assert is_home, f"Expected home page URL, got: {current_url}"
+            print(f"   [OK] Navigated to home page: {current_url}")
 
             take_screenshot(page, "public_error_03_home_from_404", "Home from 404")
 
@@ -115,10 +114,9 @@ def test_error_pages():
 
             # From router/index.js: meta.title = 'Page Not Found'
             title = page.title()
-            if "Not Found" in title or "404" in title:
-                print(f"   [OK] Page title indicates 404: {title}")
-            else:
-                print(f"   [INFO] Page title: {title}")
+            has_404_title = "Not Found" in title or "404" in title
+            assert has_404_title, f"Expected 404 in page title, got: {title}"
+            print(f"   [OK] Page title indicates 404: {title}")
 
             # ========================================
             # STEP 6: Test forbidden page (403)

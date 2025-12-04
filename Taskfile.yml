@@ -263,10 +263,8 @@ tasks:
 
   # CI/CD tasks
   ci:all:
-    desc: Run all CI checks (format + lint, no tests)
+    desc: Run all CI checks (lint only, no tests)
     cmds:
-      - task: format
-      - task: format:check
       - task: lint:black
       - task: lint:flake8
       - task: lint:isort

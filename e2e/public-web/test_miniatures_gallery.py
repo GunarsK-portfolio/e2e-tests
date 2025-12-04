@@ -50,7 +50,8 @@ def test_miniatures_gallery():
             # STEP 2: Verify themes grid
             # ========================================
             print("\n2. Verifying themes grid...")
-            page.wait_for_timeout(1000)  # Wait for themes to load
+            # Wait for themes to load via API response
+            page.wait_for_load_state("networkidle")
 
             # From Miniatures.vue: theme cards have class "theme-card" and role="link"
             theme_cards = page.locator('.theme-card, .n-card[role="link"]')

@@ -4,9 +4,9 @@ Common helper functions for E2E tests
 
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 
 # ========================================
 # CONSTANTS
@@ -648,7 +648,7 @@ def verify_cell_contains(row, text: str, description: str | None = None):
 # ========================================
 
 
-def scroll_to_section(page: Page, section_text: str, wait_ms: int = 500):
+def scroll_to_section(page: Page, section_text: str, wait_ms: int = 500) -> Optional[Locator]:
     """Scroll to a section by text content and verify visibility
 
     Args:
@@ -669,7 +669,7 @@ def scroll_to_section(page: Page, section_text: str, wait_ms: int = 500):
 
 def verify_section_visible(
     page: Page, section_text: str, section_name: Optional[str] = None, wait_ms: int = 500
-):
+) -> bool:
     """Scroll to section and verify it's visible with logging
 
     Args:
@@ -693,7 +693,7 @@ def verify_section_visible(
     return False
 
 
-def verify_element_exists(page: Page, selector: str, name: str):
+def verify_element_exists(page: Page, selector: str, name: str) -> Tuple[bool, int]:
     """Check if element exists and log result
 
     Args:
@@ -713,7 +713,7 @@ def verify_element_exists(page: Page, selector: str, name: str):
     return False, 0
 
 
-def verify_element_count(page: Page, selector: str, name: str):
+def verify_element_count(page: Page, selector: str, name: str) -> Tuple[bool, int]:
     """Check if element exists and log the count found
 
     Args:
@@ -733,7 +733,7 @@ def verify_element_count(page: Page, selector: str, name: str):
     return False, 0
 
 
-def click_if_visible(page: Page, selector: str, name: str, wait_ms: int = 500):
+def click_if_visible(page: Page, selector: str, name: str, wait_ms: int = 500) -> bool:
     """Click element if it exists and is visible
 
     Args:
@@ -755,7 +755,7 @@ def click_if_visible(page: Page, selector: str, name: str, wait_ms: int = 500):
     return False
 
 
-def verify_url_contains(page: Page, expected_part: str, description: Optional[str] = None):
+def verify_url_contains(page: Page, expected_part: str, description: Optional[str] = None) -> bool:
     """Verify current URL contains expected string
 
     Args:
@@ -775,7 +775,9 @@ def verify_url_contains(page: Page, expected_part: str, description: Optional[st
     return False
 
 
-def find_first_matching(page: Page, selectors: list[str], name: str = "element"):
+def find_first_matching(
+    page: Page, selectors: list[str], name: str = "element"
+) -> Optional[Locator]:
     """Try multiple selectors and return first matching element
 
     Args:
@@ -794,7 +796,7 @@ def find_first_matching(page: Page, selectors: list[str], name: str = "element")
     return None
 
 
-def print_test_summary(test_name: str, passed_tests: list[str]):
+def print_test_summary(test_name: str, passed_tests: list[str]) -> None:
     """Print standardized test summary
 
     Args:
@@ -809,7 +811,7 @@ def print_test_summary(test_name: str, passed_tests: list[str]):
         print(f"  [PASS] {test}")
 
 
-def verify_text_visible(page: Page, texts: list[str], name: str):
+def verify_text_visible(page: Page, texts: list[str], name: str) -> bool:
     """Check if any of the provided texts are visible on page
 
     Args:
@@ -832,7 +834,7 @@ def verify_text_visible(page: Page, texts: list[str], name: str):
     return False
 
 
-def navigate_and_wait(page: Page, url: str, wait_ms: int = 500):
+def navigate_and_wait(page: Page, url: str, wait_ms: int = 500) -> None:
     """Navigate to URL and wait for page load
 
     Args:

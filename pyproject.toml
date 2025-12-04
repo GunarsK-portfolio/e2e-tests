@@ -55,6 +55,8 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false  # Tests don't need strict typing
 ignore_missing_imports = true  # Playwright imports
+explicit_package_bases = true  # Fix duplicate module name issue
+mypy_path = "."
 
 [[tool.mypy.overrides]]
 module = "playwright.*"
