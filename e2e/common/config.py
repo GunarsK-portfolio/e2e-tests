@@ -4,6 +4,7 @@ Loads settings from .env file and environment variables
 """
 
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -30,6 +31,9 @@ class TestConfig:
                         line = line.strip()
                         if line and not line.startswith("#") and "=" in line:
                             key, value = line.split("=", 1)
+                            # Strip inline comments - only if # is preceded by whitespace
+                            # This preserves URLs with hash fragments
+                            value = re.sub(r"\s+#.*$", "", value)
                             env_vars[key.strip()] = value.strip().strip("\"'")
             except Exception as e:
                 print(f"[WARN] Could not read .env file: {e}")

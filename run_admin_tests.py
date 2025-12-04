@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Test Suite Runner
-Runs all E2E tests for the portfolio admin web application
+Admin-Web Test Suite Runner
+Runs E2E tests for admin-web application (requires authentication)
 """
 
+import argparse
 import os
 import subprocess
 import sys
@@ -12,8 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-class TestRunner:
-    """Manages and runs all E2E tests"""
+class AdminTestRunner:
+    """Manages and runs admin-web E2E tests"""
 
     def __init__(self):
         self.testing_dir = Path(__file__).parent
@@ -28,17 +29,16 @@ class TestRunner:
         print("=" * 70)
 
         try:
-            # Set PYTHONPATH to include the testing directory so imports work
             env = os.environ.copy()
             env["PYTHONPATH"] = str(self.testing_dir)
 
             result = subprocess.run(
                 [sys.executable, str(test_path)],
                 cwd=str(self.testing_dir),
-                capture_output=False,  # Show output in real-time
-                timeout=300,  # 5 minute timeout per test
-                check=False,  # Don't raise exception on non-zero exit
-                env=env,  # Pass modified environment
+                capture_output=False,
+                timeout=300,
+                check=False,
+                env=env,
             )
 
             success = result.returncode == 0
@@ -80,55 +80,39 @@ class TestRunner:
             )
             return False
 
-    def run_all_tests(self):
-        """Run all available E2E tests"""
-        self.start_time = datetime.now(timezone.utc)
-
-        tests = [
+    def get_tests(self):
+        """Get list of admin-web tests"""
+        base = self.testing_dir / "e2e" / "admin-web"
+        return [
             # Authentication must run first
-            (self.testing_dir / "e2e" / "auth-flow" / "test_auth_flow.py", "Authentication Flow"),
+            (base / "auth-flow" / "test_auth_flow.py", "Authentication Flow"),
             # Navigation
+            (base / "dashboard" / "test_dashboard_navigation.py", "Dashboard Navigation"),
+            # CRUD tests
+            (base / "profile" / "test_profile.py", "Profile Management"),
+            (base / "skills" / "test_skills_crud.py", "Skills CRUD"),
+            (base / "experience" / "test_experience_crud.py", "Work Experience CRUD"),
+            (base / "certifications" / "test_certifications_crud.py", "Certifications CRUD"),
             (
-                self.testing_dir / "e2e" / "dashboard" / "test_dashboard_navigation.py",
-                "Dashboard Navigation",
-            ),
-            # CRUD tests - can run in any order
-            (self.testing_dir / "e2e" / "profile" / "test_profile.py", "Profile Management"),
-            (self.testing_dir / "e2e" / "skills" / "test_skills_crud.py", "Skills CRUD"),
-            (
-                self.testing_dir / "e2e" / "experience" / "test_experience_crud.py",
-                "Work Experience CRUD",
-            ),
-            (
-                self.testing_dir / "e2e" / "certifications" / "test_certifications_crud.py",
-                "Certifications CRUD",
-            ),
-            (
-                self.testing_dir / "e2e" / "portfolio-projects" / "test_portfolio_projects_crud.py",
+                base / "portfolio-projects" / "test_portfolio_projects_crud.py",
                 "Portfolio Projects CRUD",
             ),
             # Miniatures CRUD tests
-            (
-                self.testing_dir / "e2e" / "miniatures" / "test_paints_crud.py",
-                "Miniatures Paints CRUD",
-            ),
-            (
-                self.testing_dir / "e2e" / "miniatures" / "test_themes_crud.py",
-                "Miniatures Themes CRUD",
-            ),
-            (
-                self.testing_dir / "e2e" / "miniatures" / "test_projects_crud.py",
-                "Miniatures Projects CRUD",
-            ),
+            (base / "miniatures" / "test_paints_crud.py", "Miniatures Paints CRUD"),
+            (base / "miniatures" / "test_themes_crud.py", "Miniatures Themes CRUD"),
+            (base / "miniatures" / "test_projects_crud.py", "Miniatures Projects CRUD"),
             # Messaging CRUD tests
-            (
-                self.testing_dir / "e2e" / "messaging" / "test_messaging_crud.py",
-                "Messaging CRUD",
-            ),
+            (base / "messaging" / "test_messaging_crud.py", "Messaging CRUD"),
         ]
 
+    def run_tests(self):
+        """Run all admin-web tests"""
+        self.start_time = datetime.now(timezone.utc)
+
+        tests = self.get_tests()
+
         print("\n" + "=" * 70)
-        print("PORTFOLIO E2E TEST SUITE")
+        print("ADMIN-WEB E2E TEST SUITE")
         print("=" * 70)
         print(f"Starting test run at: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Total tests: {len(tests)}")
@@ -155,7 +139,7 @@ class TestRunner:
         duration = (self.end_time - self.start_time).total_seconds()
 
         print("\n" + "=" * 70)
-        print("TEST SUITE SUMMARY")
+        print("ADMIN-WEB TEST SUITE SUMMARY")
         print("=" * 70)
 
         passed = sum(1 for r in self.results if r["success"])
@@ -187,20 +171,28 @@ class TestRunner:
 
 def main():
     """Main entry point"""
-    runner = TestRunner()
+    parser = argparse.ArgumentParser(description="Run admin-web E2E tests")
+    parser.add_argument(
+        "--no-confirm",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
 
-    # Skip confirmation if running non-interactively or --no-confirm flag
-    if "--no-confirm" in sys.argv or not sys.stdin.isatty():
+    args = parser.parse_args()
+
+    runner = AdminTestRunner()
+
+    if args.no_confirm or not sys.stdin.isatty():
         print("\n" + "=" * 70)
-        print("PORTFOLIO E2E TEST SUITE")
+        print("ADMIN-WEB E2E TEST SUITE")
         print("=" * 70)
-        print("\nRunning all E2E tests...")
+        print("\nRunning admin-web E2E tests...")
     else:
         print("\n" + "=" * 70)
-        print("PORTFOLIO E2E TEST SUITE")
+        print("ADMIN-WEB E2E TEST SUITE")
         print("=" * 70)
-        print("\nThis will run all E2E tests for the portfolio admin web.")
-        print("Each test will open a browser window.")
+        print("\nThis will run admin-web E2E tests.")
+        print("Requires admin-web and admin-api services running.")
         print("\nPress Enter to continue or Ctrl+C to cancel...")
 
         try:
@@ -209,7 +201,7 @@ def main():
             print("\n\nTest run cancelled.")
             return 1
 
-    all_passed = runner.run_all_tests()
+    all_passed = runner.run_tests()
 
     return 0 if all_passed else 1
 

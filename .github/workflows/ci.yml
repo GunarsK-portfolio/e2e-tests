@@ -79,11 +79,8 @@ jobs:
           required_dirs = [
               'e2e/common',
               'e2e/auth',
-              'e2e/profile',
-              'e2e/skills',
-              'e2e/experience',
-              'e2e/certifications',
-              'e2e/miniatures'
+              'e2e/admin-web',
+              'e2e/public-web'
           ]
 
           missing = []
@@ -132,14 +129,19 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
 
-      - name: Verify test runner exists
+      - name: Verify test runners exist
         run: |
-          if [ ! -f run_all_tests.py ]; then
-            echo "ERROR: run_all_tests.py not found"
+          if [ ! -f run_admin_tests.py ]; then
+            echo "ERROR: run_admin_tests.py not found"
             exit 1
           fi
-          python -m py_compile run_all_tests.py
-          echo "Test runner compiles successfully"
+          if [ ! -f run_public_tests.py ]; then
+            echo "ERROR: run_public_tests.py not found"
+            exit 1
+          fi
+          python -m py_compile run_admin_tests.py
+          python -m py_compile run_public_tests.py
+          echo "Test runners compile successfully"
 
       - name: Verify all test files compile
         run: |

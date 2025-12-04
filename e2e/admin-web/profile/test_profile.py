@@ -186,8 +186,8 @@ def test_profile():
         updated_name = f"{test_name} Updated"
         updated_title = "Senior E2E Test Engineer"
 
-        # File paths for testing
-        test_files_dir = Path(__file__).parent.parent.parent / "test-files"
+        # File paths for testing - relative to e2e-tests root
+        test_files_dir = Path(__file__).parent.parent.parent.parent / "test-files"
         avatar_file = test_files_dir / "test-avatar.jpg"
         resume_file = test_files_dir / "test-resume.pdf"
 

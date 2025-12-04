@@ -57,8 +57,10 @@ def test_themes_crud():
         updated_theme_name = f"{test_theme_name} Updated"
         updated_theme_desc = "Updated: Advanced E2E testing theme"
 
-        # Test image path - relative to test file
-        test_image_path = str(Path(__file__).parent.parent.parent / "test-files" / "test_image.jpg")
+        # Test image path - relative to e2e-tests root
+        test_image_path = str(
+            Path(__file__).parent.parent.parent.parent / "test-files" / "test-image.jpg"
+        )
 
         try:
             # ========================================

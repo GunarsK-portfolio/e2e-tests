@@ -4,9 +4,9 @@ Common helper functions for E2E tests
 
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 
 # ========================================
 # CONSTANTS
@@ -272,11 +272,15 @@ def fill_color_picker(
 
 
 def upload_file(page: Page, modal, file_path: str, wait_ms: int = 1000):
-    """Upload a file using NUpload component"""
-    # Target the file input within the upload component
-    # NUpload creates a hidden file input that we need to interact with
-    file_input = modal.locator('input[type="file"]').first
-    file_input.set_input_files(file_path)
+    """Upload a file using NUpload component with file chooser API"""
+    # NUpload with custom-request and dragger creates a hidden file input
+    # that can hang when using set_input_files directly on Windows.
+    # Use the file chooser API by clicking the upload trigger instead.
+    upload_dragger = modal.locator(".n-upload-dragger").first
+    with page.expect_file_chooser() as fc_info:
+        upload_dragger.click()
+    file_chooser = fc_info.value
+    file_chooser.set_files(file_path)
     page.wait_for_timeout(wait_ms)
 
 
@@ -637,3 +641,207 @@ def verify_cell_contains(row, text: str, description: str | None = None):
     if found and description:
         print(f"   [OK] {description}")
     return found
+
+
+# ========================================
+# PUBLIC-WEB HELPERS
+# ========================================
+
+
+def scroll_to_section(page: Page, section_text: str, wait_ms: int = 500) -> Optional[Locator]:
+    """Scroll to a section by text content and verify visibility
+
+    Args:
+        page: Playwright page object
+        section_text: Text to identify the section (e.g., "Skills", "Experience")
+        wait_ms: Wait time after scrolling
+
+    Returns:
+        Locator: The section locator if found, None otherwise
+    """
+    section = page.locator(f'section:has-text("{section_text}")').first
+    if section.count() > 0:
+        section.scroll_into_view_if_needed()
+        page.wait_for_timeout(wait_ms)
+        return section
+    return None
+
+
+def verify_section_visible(
+    page: Page, section_text: str, section_name: Optional[str] = None, wait_ms: int = 500
+) -> bool:
+    """Scroll to section and verify it's visible with logging
+
+    Args:
+        page: Playwright page object
+        section_text: Text to identify the section
+        section_name: Display name for logging (defaults to section_text)
+        wait_ms: Wait time after scrolling
+
+    Returns:
+        bool: True if section is visible
+    """
+    from playwright.sync_api import expect
+
+    name = section_name or section_text
+    section = scroll_to_section(page, section_text, wait_ms)
+    if section:
+        expect(section).to_be_visible()
+        print(f"   [OK] {name} section visible")
+        return True
+    print(f"   [INFO] {name} section not found")
+    return False
+
+
+def verify_element_exists(page: Page, selector: str, name: str) -> Tuple[bool, int]:
+    """Check if element exists and log result
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector or locator string
+        name: Display name for logging
+
+    Returns:
+        tuple: (exists: bool, count: int)
+    """
+    elements = page.locator(selector)
+    count = elements.count()
+    if count > 0:
+        print(f"   [OK] {name} visible")
+        return True, count
+    print(f"   [INFO] {name} not found")
+    return False, 0
+
+
+def verify_element_count(page: Page, selector: str, name: str) -> Tuple[bool, int]:
+    """Check if element exists and log the count found
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector or locator string
+        name: Display name for logging
+
+    Returns:
+        tuple: (exists: bool, count: int)
+    """
+    elements = page.locator(selector)
+    count = elements.count()
+    if count > 0:
+        print(f"   [OK] Found {count} {name}")
+        return True, count
+    print(f"   [INFO] {name} not found")
+    return False, 0
+
+
+def click_if_visible(page: Page, selector: str, name: str, wait_ms: int = 500) -> bool:
+    """Click element if it exists and is visible
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector
+        name: Display name for logging
+        wait_ms: Wait time after click
+
+    Returns:
+        bool: True if clicked
+    """
+    element = page.locator(selector).first
+    if element.count() > 0:
+        element.click()
+        page.wait_for_timeout(wait_ms)
+        print(f"   [OK] Clicked {name}")
+        return True
+    print(f"   [SKIP] {name} not found")
+    return False
+
+
+def verify_url_contains(page: Page, expected_part: str, description: Optional[str] = None) -> bool:
+    """Verify current URL contains expected string
+
+    Args:
+        page: Playwright page object
+        expected_part: String expected in URL
+        description: Optional description for logging
+
+    Returns:
+        bool: True if URL contains expected part
+    """
+    current_url = page.url
+    if expected_part in current_url:
+        msg = description or f"URL contains '{expected_part}'"
+        print(f"   [OK] {msg}: {current_url}")
+        return True
+    print(f"   [INFO] Current URL: {current_url}")
+    return False
+
+
+def find_first_matching(
+    page: Page, selectors: list[str], name: str = "element"
+) -> Optional[Locator]:
+    """Try multiple selectors and return first matching element
+
+    Args:
+        page: Playwright page object
+        selectors: List of CSS selectors to try
+        name: Display name for logging
+
+    Returns:
+        Locator: First matching element or None
+    """
+    for selector in selectors:
+        elements = page.locator(selector)
+        if elements.count() > 0:
+            return elements.first
+    print(f"   [INFO] No {name} found with provided selectors")
+    return None
+
+
+def print_test_summary(test_name: str, passed_tests: list[str]) -> None:
+    """Print standardized test summary
+
+    Args:
+        test_name: Name of the test suite
+        passed_tests: List of passed test descriptions
+    """
+    print("\n" + "=" * 60)
+    print(f"=== {test_name} COMPLETED SUCCESSFULLY ===")
+    print("=" * 60)
+    print("\nTests performed:")
+    for test in passed_tests:
+        print(f"  [PASS] {test}")
+
+
+def verify_text_visible(page: Page, texts: list[str], name: str) -> bool:
+    """Check if any of the provided texts are visible on page
+
+    Args:
+        page: Playwright page object
+        texts: List of text strings to check
+        name: Display name for logging
+
+    Returns:
+        bool: True if any text is visible
+    """
+    from playwright.sync_api import expect
+
+    selector = ", ".join([f'text="{t}"' for t in texts])
+    element = page.locator(selector).first
+    if element.count() > 0:
+        expect(element).to_be_visible()
+        print(f"   [OK] {name} displayed")
+        return True
+    print(f"   [INFO] {name} not found")
+    return False
+
+
+def navigate_and_wait(page: Page, url: str, wait_ms: int = 500) -> None:
+    """Navigate to URL and wait for page load
+
+    Args:
+        page: Playwright page object
+        url: URL to navigate to
+        wait_ms: Additional wait time after load
+    """
+    page.goto(url)
+    wait_for_page_load(page)
+    page.wait_for_timeout(wait_ms)
