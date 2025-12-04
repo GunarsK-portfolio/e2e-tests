@@ -26,7 +26,7 @@ def test_miniatures_gallery():
     """Test miniatures gallery navigation and features"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=config["headless"])
-        context = browser.new_context()
+        context = browser.new_context(ignore_https_errors=config.get("ignore_https_errors", False))
         page = context.new_page()
 
         print("\n=== PUBLIC WEB - MINIATURES GALLERY E2E TEST ===\n")

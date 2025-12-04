@@ -20,7 +20,7 @@ def test_error_pages():
     """Test error pages display correctly"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=config["headless"])
-        context = browser.new_context()
+        context = browser.new_context(ignore_https_errors=config.get("ignore_https_errors", False))
         page = context.new_page()
 
         print("\n=== PUBLIC WEB - ERROR PAGES E2E TEST ===\n")
