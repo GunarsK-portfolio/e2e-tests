@@ -11,8 +11,8 @@ from playwright.sync_api import expect, sync_playwright
 
 from e2e.common.config import get_config
 from e2e.common.helpers import (
+    scroll_to_section,
     take_screenshot,
-    verify_element_count,
     verify_url_contains,
     wait_for_page_load,
 )
@@ -41,10 +41,8 @@ def test_projects_page():
             print("   [OK] Home page loaded")
 
             # Scroll to Featured Projects section
-            projects_section = page.locator('text="Featured Projects"').first
-            if projects_section.count() > 0:
-                projects_section.scroll_into_view_if_needed()
-                page.wait_for_timeout(500)
+            projects_section = scroll_to_section(page, "Featured Projects")
+            if projects_section:
                 expect(projects_section).to_be_visible()
                 print("   [OK] Featured Projects section visible")
             else:
@@ -69,7 +67,8 @@ def test_projects_page():
                 # Click the button
                 view_all_btn.click()
                 wait_for_page_load(page)
-                page.wait_for_timeout(500)
+                # Wait for projects page header to confirm navigation
+                page.locator('text="All Projects"').wait_for(state="visible", timeout=5000)
 
                 verify_url_contains(page, "/projects", "Navigated to projects page")
                 take_screenshot(page, "public_projects_03_all_projects", "All Projects page")
@@ -98,16 +97,12 @@ def test_projects_page():
             # ========================================
             print("\n4. Verifying projects grid...")
 
-            # Wait for projects to load
-            page.wait_for_load_state("networkidle")
-
             # Project cards
             project_cards = page.locator(".n-card")
             card_count = project_cards.count()
 
             if card_count > 0:
                 print(f"   [OK] Found {card_count} project cards")
-                verify_element_count(page, ".n-card", "project cards")
             else:
                 print("   [INFO] No project cards found - may have no data")
                 take_screenshot(page, "public_projects_04_no_projects", "No projects")
