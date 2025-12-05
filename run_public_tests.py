@@ -86,6 +86,7 @@ class PublicTestRunner:
         base = self.testing_dir / "e2e" / "public-web"
         return [
             (base / "test_home_page.py", "Home Page"),
+            (base / "test_projects_page.py", "Projects Page"),
             (base / "test_contact_form.py", "Contact Form"),
             (base / "test_miniatures_gallery.py", "Miniatures Gallery"),
             (base / "test_error_pages.py", "Error Pages"),
