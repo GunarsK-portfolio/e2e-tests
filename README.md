@@ -59,6 +59,7 @@ task test:admin:messaging         # Messaging CRUD
 task test:public                  # All public tests (browser visible)
 task test:public:headless         # All public tests (headless mode)
 task test:public:home             # Home page
+task test:public:projects         # Projects page
 task test:public:contact          # Contact form
 task test:public:gallery          # Miniatures gallery
 task test:public:errors           # Error pages
@@ -171,16 +172,25 @@ task list                         # List all test suites
   - Search by email, name, subject
   - Data persistence testing
 
-### Public-Web Tests (4 suites)
+### Public-Web Tests (5 suites)
 
 - **Home Page**:
   - Hero section with title and description
   - Skills display and types
   - Work experience section
   - Certifications display
-  - Portfolio projects grid
+  - Featured projects section
   - Contact CTA section
-  - Responsive navigation
+  - Back to top functionality
+  - Page title verification
+
+- **Projects Page**:
+  - Featured Projects section on home
+  - View All Projects button navigation
+  - Projects page header and grid
+  - Featured tags on projects
+  - Project detail navigation
+  - Navigation menu Projects link
 
 - **Contact Form**:
   - Form field validation
@@ -310,11 +320,12 @@ test:admin:new-feature:
 | Miniatures Projects CRUD | 9 | CRUD, multi-image upload, theme association |
 | Messaging CRUD | 15 | Recipients CRUD, messages viewing, search |
 | **Public-Web Tests** | | |
-| Home Page | 8 | Hero, skills, experience, certifications, projects |
+| Home Page | 9 | Hero, skills, experience, certifications, featured projects |
+| Projects Page | 8 | Featured section, View All, grid, detail navigation |
 | Contact Form | 6 | Form validation, submission, error handling |
 | Miniatures Gallery | 9 | Theme grid, detail pages, carousel, navigation |
 | Error Pages | 4 | 404 page, navigation links |
-| **TOTAL** | **~160 steps** | **15 comprehensive test suites** |
+| **TOTAL** | **~170 steps** | **16 comprehensive test suites** |
 
 ## Test Coverage
 

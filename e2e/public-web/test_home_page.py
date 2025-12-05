@@ -99,8 +99,8 @@ def test_home_page():
             # ========================================
             print("\n5. Verifying Projects Section...")
 
-            # From ProjectsSection.vue: h2 with text "Portfolio Projects"
-            projects_section = scroll_to_section(page, "Portfolio Projects")
+            # From ProjectsSection.vue: h2 with text "Featured Projects"
+            projects_section = scroll_to_section(page, "Featured Projects")
             if projects_section:
                 expect(projects_section).to_be_visible()
                 print("   [OK] Projects section visible")

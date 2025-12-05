@@ -111,6 +111,11 @@ tasks:
     cmds:
       - python e2e/public-web/test_error_pages.py
 
+  test:public:projects:
+    desc: Run projects page test
+    cmds:
+      - python e2e/public-web/test_projects_page.py
+
   # Setup and configuration
   setup:
     desc: Set up testing environment
@@ -192,6 +197,7 @@ tasks:
       - echo "    task test:public             - Run all public-web tests"
       - echo "    task test:public:headless    - Run public-web tests headless"
       - echo "    task test:public:home        - Home page"
+      - echo "    task test:public:projects    - Projects page"
       - echo "    task test:public:contact     - Contact form"
       - echo "    task test:public:gallery     - Miniatures gallery"
       - echo "    task test:public:errors      - Error pages"
