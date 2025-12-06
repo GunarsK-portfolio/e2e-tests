@@ -103,6 +103,9 @@ class AdminTestRunner:
             (base / "miniatures" / "test_projects_crud.py", "Miniatures Projects CRUD"),
             # Messaging CRUD tests
             (base / "messaging" / "test_messaging_crud.py", "Messaging CRUD"),
+            # RBAC tests
+            (base / "rbac" / "test_rbac_admin_walkthrough.py", "RBAC Admin Walkthrough"),
+            (base / "rbac" / "test_rbac_demo_user.py", "RBAC Demo User Restrictions"),
         ]
 
     def run_tests(self):

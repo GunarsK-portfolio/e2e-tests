@@ -16,13 +16,21 @@ from e2e.common.config import get_config
 class AuthManager:
     """Manages authentication for E2E tests"""
 
-    def __init__(self, base_url=None):
+    def __init__(self, base_url=None, username=None, password=None) -> None:
+        """
+        Initialize AuthManager with optional custom credentials.
+
+        Args:
+            base_url: Optional base URL override
+            username: Optional username override (uses config if not provided)
+            password: Optional password override (uses config if not provided)
+        """
         self.config = get_config()
         self.base_url = base_url or self.config["admin_web_url"]
         self.context_path = Path(__file__).parent / ".auth" / "context.json"
         self.credentials = {
-            "username": self.config["admin_username"],
-            "password": self.config["admin_password"],
+            "username": username or self.config["admin_username"],
+            "password": password or self.config["admin_password"],
         }
 
     def ensure_auth_directory(self):
@@ -154,8 +162,8 @@ class AuthManager:
             page.close()
             context.close()
             raise RuntimeError(
-                "Authentication failed: Invalid credentials in .env file. "
-                "Check TEST_ADMIN_USERNAME and TEST_ADMIN_PASSWORD."
+                "Authentication failed: Invalid credentials provided. "
+                "Check your configured username/password or .env values."
             )
 
         # Try saved context (if context strategy, or if auto with no credentials)

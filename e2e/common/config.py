@@ -67,9 +67,12 @@ class TestConfig:
         env_vars = self._load_env_file()
 
         return {
-            # Authentication
+            # Authentication - Admin user
             "admin_username": self._get_value("TEST_ADMIN_USERNAME", env_vars=env_vars),
             "admin_password": self._get_value("TEST_ADMIN_PASSWORD", env_vars=env_vars),
+            # Authentication - Demo user (read-only)
+            "demo_username": self._get_value("TEST_DEMO_USERNAME", "demo", env_vars),
+            "demo_password": self._get_value("TEST_DEMO_PASSWORD", "demo123", env_vars),
             # URLs
             "admin_web_url": self._get_value("TEST_ADMIN_WEB_URL", "http://localhost:81", env_vars),
             "admin_api_url": self._get_value(
@@ -111,6 +114,8 @@ class TestConfig:
         safe_config = self.config.copy()
         if "admin_password" in safe_config:
             safe_config["admin_password"] = "***"
+        if "demo_password" in safe_config:
+            safe_config["demo_password"] = "***"
         return str(safe_config)
 
 

@@ -9,7 +9,7 @@ import sys
 from playwright.sync_api import expect, sync_playwright
 
 from e2e.common.config import get_config
-from e2e.common.helpers import take_screenshot
+from e2e.common.helpers import expand_sidebar, take_screenshot
 
 config = get_config()
 BASE_URL = config["admin_web_url"]
@@ -172,7 +172,10 @@ def test_auth_flow():
             # ========================================
             print("\n8. Testing logout functionality...")
 
-            # Look for logout button - could be in various places
+            # Expand sidebar first - logout button is in the sidebar
+            expand_sidebar(page)
+
+            # Look for logout button in sidebar
             logout_btn = page.locator(
                 'button:has-text("Logout"), '
                 'button:has-text("Log Out"), '
@@ -194,6 +197,7 @@ def test_auth_flow():
                 take_screenshot(page, "auth_08_after_logout", "After logout")
             else:
                 print("   [WARN] Logout button not found in page")
+                take_screenshot(page, "auth_08_logout_not_found", "Logout button not found")
                 # Try to navigate to dashboard to test if still authenticated
                 page.goto(f"{BASE_URL}/dashboard")
                 page.wait_for_load_state("networkidle")

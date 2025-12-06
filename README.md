@@ -16,6 +16,10 @@ TEST_ADMIN_PASSWORD=your_password
 TEST_ADMIN_WEB_URL=http://localhost:81
 TEST_PUBLIC_WEB_URL=http://localhost
 
+# Optional: Demo user for RBAC tests (defaults: demo/demo123)
+TEST_DEMO_USERNAME=demo
+TEST_DEMO_PASSWORD=demo123
+
 # Run tests
 task test:admin                   # Admin-web tests
 task test:public                  # Public-web tests
@@ -54,6 +58,9 @@ task test:admin:paints            # Miniatures Paints CRUD
 task test:admin:themes            # Miniatures Themes CRUD
 task test:admin:miniatures        # Miniatures Projects CRUD
 task test:admin:messaging         # Messaging CRUD
+task test:admin:rbac              # All RBAC tests (admin + demo user)
+task test:admin:rbac:admin        # RBAC admin walkthrough
+task test:admin:rbac:demo         # RBAC demo user restrictions
 
 # Public-web tests (no authentication required)
 task test:public                  # All public tests (browser visible)
@@ -86,7 +93,7 @@ task list                         # List all test suites
 
 ## Test Suites
 
-### Admin-Web Tests (11 suites)
+### Admin-Web Tests (13 suites)
 
 - **Authentication Flow** (11 steps):
   - Login/logout functionality
@@ -171,6 +178,24 @@ task list                         # List all test suites
   - Message details modal
   - Search by email, name, subject
   - Data persistence testing
+
+- **RBAC - Admin Walkthrough** (12 steps):
+  - Full admin permissions verification
+  - All sidebar navigation items accessible
+  - CRUD operations on all resources
+  - File upload permissions (avatar, resume, images)
+  - Delete operations confirmation
+  - Permission indicators in UI
+
+- **RBAC - Demo User Restrictions** (15 steps):
+  - Limited sidebar navigation (hidden items)
+  - Read-only access to permitted resources
+  - View button instead of Edit for read-only
+  - Hidden Add/Delete buttons
+  - Hidden file upload sections
+  - Modal opens in view-only mode (no Save button)
+  - Blocked navigation to restricted pages
+  - Permission-based UI element visibility
 
 ### Public-Web Tests (5 suites)
 
@@ -319,13 +344,15 @@ test:admin:new-feature:
 | Miniatures Paints CRUD | 9 | CRUD, color picker, manufacturer search |
 | Miniatures Projects CRUD | 9 | CRUD, multi-image upload, theme association |
 | Messaging CRUD | 15 | Recipients CRUD, messages viewing, search |
+| RBAC Admin Walkthrough | 12 | Full permissions, all resources, file uploads |
+| RBAC Demo User | 15 | Read-only access, hidden actions, view-only modals |
 | **Public-Web Tests** | | |
 | Home Page | 9 | Hero, skills, experience, certifications, featured projects |
 | Projects Page | 8 | Featured section, View All, grid, detail navigation |
 | Contact Form | 6 | Form validation, submission, error handling |
 | Miniatures Gallery | 9 | Theme grid, detail pages, carousel, navigation |
 | Error Pages | 4 | 404 page, navigation links |
-| **TOTAL** | **~170 steps** | **16 comprehensive test suites** |
+| **TOTAL** | **~197 steps** | **18 comprehensive test suites** |
 
 ## Test Coverage
 
@@ -337,6 +364,8 @@ The test suites provide comprehensive coverage of the portfolio application:
   validation/submission, miniatures gallery navigation, and error page handling
 - **Authentication**: Complete auth flow from login through session management to
   logout with persistence verification
+- **RBAC**: Role-based access control testing for admin (full permissions) and demo
+  user (read-only restrictions with hidden UI elements)
 
 All critical user paths are covered with step-by-step verification and automated
 screenshot capture for visual regression documentation.
