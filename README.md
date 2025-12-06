@@ -16,6 +16,10 @@ TEST_ADMIN_PASSWORD=your_password
 TEST_ADMIN_WEB_URL=http://localhost:81
 TEST_PUBLIC_WEB_URL=http://localhost
 
+# Optional: Demo user for RBAC tests (defaults: demo/demo123)
+TEST_DEMO_USERNAME=demo
+TEST_DEMO_PASSWORD=demo123
+
 # Run tests
 task test:admin                   # Admin-web tests
 task test:public                  # Public-web tests

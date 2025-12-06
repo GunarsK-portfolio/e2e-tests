@@ -6,6 +6,7 @@ Tests: Demo user has read-only access, cannot see Add/Edit/Delete buttons,
 """
 
 import sys
+import traceback
 
 from playwright.sync_api import expect, sync_playwright
 
@@ -66,11 +67,6 @@ def test_rbac_demo_user():
             password=config["demo_password"],
         )
         page, context = auth_manager.authenticate(browser, strategy="credentials")
-
-        if not page:
-            print("[ERROR] Demo user authentication failed")
-            browser.close()
-            return False
 
         print("\n=== RBAC DEMO USER RESTRICTIONS E2E TEST ===\n")
 
@@ -284,15 +280,11 @@ def test_rbac_demo_user():
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             take_screenshot(page, "rbac_demo_error_assertion", "Assertion error")
-            import traceback
-
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "rbac_demo_error", "Error occurred")
-            import traceback
-
             traceback.print_exc()
             return False
         finally:

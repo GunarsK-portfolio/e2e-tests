@@ -6,6 +6,7 @@ Tests: Admin has full CRUD access to all resources, can see all menu items
 
 import sys
 import time
+import traceback
 
 from playwright.sync_api import expect, sync_playwright
 
@@ -77,10 +78,6 @@ def test_rbac_admin_walkthrough():
         auth_manager = AuthManager()
         browser = p.chromium.launch(headless=config["headless"])
         page, context = auth_manager.authenticate(browser, strategy="auto")
-
-        if not page:
-            print("[ERROR] Authentication failed")
-            return False
 
         print("\n=== RBAC ADMIN WALKTHROUGH E2E TEST ===\n")
 
@@ -331,15 +328,11 @@ def test_rbac_admin_walkthrough():
         except AssertionError as e:
             print(f"\n[ASSERTION ERROR] {e}")
             take_screenshot(page, "rbac_admin_error_assertion", "Assertion error")
-            import traceback
-
             traceback.print_exc()
             return False
         except Exception as e:
             print(f"\n[ERROR] {e}")
             take_screenshot(page, "rbac_admin_error", "Error occurred")
-            import traceback
-
             traceback.print_exc()
             return False
         finally:
