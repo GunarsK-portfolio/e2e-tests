@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 E2E test for RBAC - Admin User Full Walkthrough
 Tests: Admin has full CRUD access to all resources, can see all menu items

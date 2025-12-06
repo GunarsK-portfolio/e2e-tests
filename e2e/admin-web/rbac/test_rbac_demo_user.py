@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 E2E test for RBAC - Demo User Restrictions
 Tests: Demo user has read-only access, cannot see Add/Edit/Delete buttons,
