@@ -845,3 +845,30 @@ def navigate_and_wait(page: Page, url: str, wait_ms: int = 500) -> None:
     page.goto(url)
     wait_for_page_load(page)
     page.wait_for_timeout(wait_ms)
+
+
+# ========================================
+# SIDEBAR HELPERS
+# ========================================
+
+
+def expand_sidebar(page: Page, wait_ms: int = 300) -> bool:
+    """Expand the sidebar if it's collapsed
+
+    Args:
+        page: Playwright page object
+        wait_ms: Wait time after expanding
+
+    Returns:
+        bool: True if sidebar was expanded, False if already expanded or not found
+    """
+    # Check if sidebar is collapsed by looking for the collapsed class
+    sider = page.locator(".n-layout-sider--collapsed").first
+    if sider.count() > 0:
+        # Click the toggle button to expand
+        toggle_btn = page.locator(".n-layout-toggle-button").first
+        if toggle_btn.count() > 0:
+            toggle_btn.click()
+            page.wait_for_timeout(wait_ms)
+            return True
+    return False

@@ -90,6 +90,22 @@ tasks:
     cmds:
       - python e2e/admin-web/messaging/test_messaging_crud.py
 
+  test:admin:rbac:
+    desc: Run all RBAC tests (admin + demo user)
+    cmds:
+      - python e2e/admin-web/rbac/test_rbac_admin_walkthrough.py
+      - python e2e/admin-web/rbac/test_rbac_demo_user.py
+
+  test:admin:rbac:admin:
+    desc: Run RBAC admin walkthrough test
+    cmds:
+      - python e2e/admin-web/rbac/test_rbac_admin_walkthrough.py
+
+  test:admin:rbac:demo:
+    desc: Run RBAC demo user restrictions test
+    cmds:
+      - python e2e/admin-web/rbac/test_rbac_demo_user.py
+
   # Individual public-web tests
   test:public:home:
     desc: Run home page test
@@ -192,6 +208,9 @@ tasks:
       - echo "    task test:admin:themes       - Miniatures themes CRUD"
       - echo "    task test:admin:miniatures   - Miniatures projects CRUD"
       - echo "    task test:admin:messaging    - Messaging CRUD"
+      - echo "    task test:admin:rbac         - All RBAC tests"
+      - echo "    task test:admin:rbac:admin   - RBAC admin walkthrough"
+      - echo "    task test:admin:rbac:demo    - RBAC demo user restrictions"
       - echo ""
       - echo "  PUBLIC-WEB TESTS:"
       - echo "    task test:public             - Run all public-web tests"
