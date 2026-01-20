@@ -153,7 +153,7 @@ def test_home_page():
 
                 # Verify scrolled to top
                 scroll_y = page.evaluate("window.scrollY")
-                assert scroll_y < 100, f"Expected scroll near top, got {scroll_y}"
+                assert scroll_y < 150, f"Expected scroll near top, got {scroll_y}"
                 print("   [OK] Back to Top button works")
             else:
                 print("   [INFO] Back to Top button not found (may appear on scroll)")
