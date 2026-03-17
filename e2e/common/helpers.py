@@ -251,10 +251,10 @@ def fill_color_picker(
     if label:
         # Find the form item by label text
         form_item = modal.locator(f'.n-form-item:has(.n-form-item-label:has-text("{label}"))').first
-        color_picker = form_item.locator(".n-color-picker-trigger").first
+        color_picker = form_item.locator(".n-color-picker__fill").first
     else:
         # Fallback to first color picker in modal
-        color_picker = modal.locator(".n-color-picker-trigger").first
+        color_picker = modal.locator(".n-color-picker__fill").first
 
     # Open color picker
     color_picker.click()
