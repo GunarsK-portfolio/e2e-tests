@@ -53,6 +53,8 @@
   "prConcurrentLimit": 10,
   "rebaseWhen": "behind-base-branch",
   "pip_requirements": {
-    "fileMatch": ["(^|/)requirements\\.txt$"]
+    "managerFilePatterns": [
+      "/(^|/)requirements\.txt$/"
+    ]
   }
 }
