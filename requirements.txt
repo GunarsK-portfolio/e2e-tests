@@ -8,7 +8,7 @@ playwright==1.58.0
 black==26.5.1          # Code formatter
 flake8==7.3.0           # Linter
 isort==8.0.1           # Import sorter
-pylint==4.0.5           # Static code analyzer
+pylint==4.0.6           # Static code analyzer
 mypy==1.20.2            # Type checker
 
 # Development dependencies
